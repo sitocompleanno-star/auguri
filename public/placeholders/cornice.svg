@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 340" width="320" height="340" role="img" aria-label="Cornice foto e frase (placeholder)">
+  <rect width="320" height="340" rx="28" fill="#ededec"/>
+  <rect x="16" y="16" width="288" height="230" rx="10" fill="#e0dddc"/>
+  <rect x="16" y="260" width="288" height="64" rx="10" fill="#e0dddc"/>
+</svg>

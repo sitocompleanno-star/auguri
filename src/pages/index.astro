@@ -1,0 +1,16 @@
+---
+import Base from '../layouts/Base.astro';
+const base = import.meta.env.BASE_URL;
+---
+<Base>
+  <main style="padding: 2rem 1.5rem; text-align: center;">
+    <p style="margin:0; font-weight:700; letter-spacing:.04em; color: var(--bordeaux); font-size:.8rem;">
+      L’UNIVERSO DELLE COSE
+    </p>
+    <h1 style="margin:.2rem 0 1.5rem; font-family: var(--font-titolo); font-style: italic; font-weight: 400; font-size: 3.5rem; color: var(--bordeaux);">
+      minuscole
+    </h1>
+    <img src={`${base}placeholders/zampa-1.svg`} alt="" width="160" height="90" />
+    <p style="color: var(--grigio-testo);">Fase 0 · fondamenta pronte. La home arriva in Fase 1.</p>
+  </main>
+</Base>

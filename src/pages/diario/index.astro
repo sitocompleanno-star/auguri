@@ -1,0 +1,11 @@
+---
+import Base from '../../layouts/Base.astro';
+const base = import.meta.env.BASE_URL;
+---
+<Base titolo="Diario · minuscole">
+  <main style="padding: 2rem 1.5rem;">
+    <a href={base} style="color: var(--bordeaux); font-weight:700;">← torna alla home</a>
+    <h1 style="font-family: var(--font-titolo); font-style: italic; font-weight: 400; color: var(--bordeaux);">Diario</h1>
+    <p style="color: var(--grigio-testo);">Pagina in costruzione.</p>
+  </main>
+</Base>

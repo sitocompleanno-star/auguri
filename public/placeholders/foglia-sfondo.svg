@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 800" width="400" height="800" role="img" aria-label="Foglia di sfondo (placeholder)">
+  <path d="M200 20 C60 200 60 560 200 780 C340 560 340 200 200 20 Z" fill="#ededec"/>
+  <path d="M200 20 L200 780" stroke="#e0dddc" stroke-width="6" fill="none"/>
+</svg>

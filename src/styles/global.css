@@ -1,0 +1,57 @@
+/* Palette ricavata dal mockup (valori approssimati: da confermare con chi fa la grafica) */
+:root {
+  --bordeaux: #7a1616;
+  --mauve: #a06a64;
+  --pesca: #f4a07a;
+  --crema: #f0c9a0;
+  --rosa-chiaro: #fbd9cc;
+  --grigio-chiaro: #ededec;
+  --grigio: #e0dddc;
+  --grigio-testo: #8a8584;
+  --inchiostro: #1d1d1d;
+
+  /* Font: stack provvisori, da sostituire con i font finali */
+  --font-titolo: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+  --font-ui: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+
+  --larghezza-foglio: 430px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: #fff;
+  color: var(--inchiostro);
+  font-family: var(--font-ui);
+}
+
+/* Il "foglio" mobile: su schermi larghi resta centrato (il desktop vero arriva in Fase 8) */
+.foglio {
+  position: relative;
+  width: 100%;
+  max-width: var(--larghezza-foglio);
+  min-height: 100dvh;
+  margin: 0 auto;
+  overflow: hidden;
+  background: #fff;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
