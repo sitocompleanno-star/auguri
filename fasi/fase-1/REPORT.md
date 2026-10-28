@@ -1,34 +1,35 @@
 # Report · Fase 1 · Home statica (mobile)
 
-Data: 2026-10-26
+Data: 2026-10-28
 
 ## Obiettivo
-Realizzare la home fedele al mockup (`ALI.pdf`, pagina 1) a larghezza telefono (~390px), senza animazioni.
+Realizzare la home fedele al mockup (`ALI.pdf`, pagina 1) a larghezza telefono (~390px), senza animazioni, usando gli SVG definitivi forniti (cartella "pagina iniziale").
 
 ## Fatto
-- Home composta come nel mockup: titolo "L'UNIVERSO DELLE COSE / minuscole" in alto a destra, foglia grigia di sfondo, 5 zampe a sinistra che escono dal bordo (senza scritte), cornice con area foto e area frase (segnaposto), 4 pulsanti dei giochi, striscia "COLLEZIONE DI FRANCOBOLLI" con 9 slot (2 pieni, 7 vuoti).
-- Componenti in `src/components/`: `Zampa`, `Cornice` (slot `foto` e `frase` pronti per la Fase 3), `PulsanteGioco`, `StripFrancobolli` (props `totale` e `ottenuti`, pronta per la Fase 4).
-- Dati della home in `src/data/home.ts` (elenco zampe, giochi, francobolli ottenuti).
-- Sistema di misura "unità mockup": `--u = larghezza foglio / 960` (larghezza della pagina del PDF), definita in `global.css` su `.foglio` (che ora è un container). Tutte le misure della home sono `calc(N * var(--u))` con N letto dal mockup, quindi la home scala con il foglio e mantiene le proporzioni.
-- Se lo schermo è più alto del mockup, a crescere sono solo gli spazi tra gli elementi (le dimensioni restano fisse).
-- Le 5 zampe placeholder sono state ridisegnate (stessi nomi file) con testa più grande e fascia di colore sul bordo, per assomigliare di più al mockup; il viewBox è passato da 160x90 a 160x110.
-- Zampe con ombra grigia (CSS `drop-shadow`), come nel mockup.
-- Tutti i percorsi degli asset passano da `import.meta.env.BASE_URL`.
+- Home composta come nel mockup: titolo "L'UNIVERSO DELLE COSE / minuscole" in alto a destra, foglia di sfondo, 5 zampe a sinistra che escono dal bordo (senza scritte), cornice con area foto e area frase (segnaposto), 4 pulsanti dei giochi, striscia "COLLEZIONE DI FRANCOBOLLI" con 9 slot (2 pieni, 7 vuoti).
+- **SVG definitivi integrati** in `public/grafica/` (nomi puliti, senza spazi): `titolo`, `sfondo-foglia`, `cornice`, `collezione-francobolli`, `francobollo-vuoto`, 4 pulsanti (`gioco-cuore`, `gioco-fiori`, `gioco-arcobaleno`, `gioco-sole`) e 5 zampe (`zampa-diario`, `zampa-archivio`, `zampa-luna-park`, `zampa-club-amici`, `zampa-caos`).
+- Corrispondenza con i file originali: `pulsante 4`=cuore, `3`=fiori, `2`=arcobaleno, `1`=sole (come nell'ordine del mockup); `sfondo 1`=foglia, `sfondo 2`=cornice; `ombra francobollo`=slot vuoto.
+- Il titolo e "COLLEZIONE DI FRANCOBOLLI" sono ora immagini SVG: il problema dei font della Fase 0 non riguarda più la home. Restano in HTML solo i segnaposto "FOTO/FRASE RANDOM DEL GIORNO" (Arial grassetto).
+- **Zampe:** gli SVG sono il braccio lungo con la scritta (serviranno in Fase 2). Nella home se ne mostra solo la parte destra (152 punti di larghezza, quella che esce dal bordo), senza scritta, tagliando via CSS: il file resta intero. L'ombra è già nell'SVG.
+- **Foglia:** lo SVG originale è più grande della pagina; il ritaglio visibile (x 58,39–401,54; y 11,45–1211,45) coincide col bordo verticale netto del mockup. Ho portato il `viewBox` di `sfondo-foglia.svg` a quel ritaglio (`58.39 11.45 343.15 1200`).
+- Componenti in `src/components/`: `Zampa`, `Cornice` (slot `foto` e `frase`, pronti per la Fase 3), `PulsanteGioco`, `StripFrancobolli` (props `totale` e `ottenuti`, pronta per la Fase 4). Dati in `src/data/home.ts`.
+- **Scala esatta:** la pagina del PDF è 940 x 1200 punti e gli SVG sono nella stessa scala. `--u = larghezza foglio / 940` (prima usavo una stima di 960 che non era corretta). Tutte le posizioni sono state misurate sul mockup renderizzato a 72 dpi e confrontate automaticamente con gli SVG (zampe e foglia combaciano al punto).
+- Palette aggiornata con i colori veri degli SVG (es. bordeaux `#6f211c`, grigi della cornice come `#afa3a2` al 20%).
+- Placeholder rimasti: solo `public/placeholders/francobollo-1.svg` e `francobollo-2.svg` (i francobolli pieni non sono stati forniti), con la stessa forma dello slot vuoto. Gli altri placeholder sono stati eliminati.
 
 ## Verifiche
-- `npm run build` con `BASE=/auguri`: 6 pagine, percorsi corretti (`/auguri/placeholders/...`).
-- Controllo visivo con Chromium (Playwright) a 390x500 (proporzione esatta del mockup) e 390x844 (telefono alto): nessuno scroll orizzontale, elementi allineati al mockup.
-- Peso di `dist/`: 116 KB.
-- Non verificato: rendering su telefono reale e con i font definitivi.
+- `npm run build` con `BASE=/auguri`: 6 pagine, percorsi corretti (`/auguri/grafica/...`).
+- Controllo visivo con Chromium (Playwright) a 390x498 (proporzione del mockup) e 390x844 (telefono alto): nessuno scroll orizzontale; a 390x498 la home è sovrapponibile al mockup.
+- Peso di `dist/`: 268 KB.
+- Non verificato: rendering su telefono reale.
 
 ## Decisioni prese
-- Misure in unità mockup invece di pixel fissi o breakpoint.
-- Le zampe sono decorative in questa fase (nessun link, `alt=""`); diventeranno link in Fase 2.
-- Titolo e testi usano i font di sistema (nessun font caricato da rete).
+- Misure in punti mockup (`--u`), non in pixel né breakpoint.
+- Telefono più alto del mockup: le dimensioni restano quelle del mockup e a crescere sono solo gli spazi (ogni blocco scende di una quota `k` dello spazio in più, definita in `home.ts`/`index.astro`); la foglia si ingrandisce restando ritagliata alla stessa larghezza.
+- Le zampe sono decorative in questa fase (nessun link, `alt=""`, nome sezione solo per screen reader); diventano link in Fase 2.
 
 ## Problemi aperti
-- **Proporzione del mockup vs telefono.** Il mockup è 960x1232 (rapporto 1,28), un telefono ha circa 2,1: a 390px il mockup è alto solo ~500px. Ora gli spazi si allungano, ma sullo schermo alto restano vuoti vistosi. Opzioni per la Fase 2/8: far crescere solo l'altezza dell'area foto (comoda per foto verticali), oppure ridisegnare la composizione per il formato telefono.
-- Font: nel mockup "minuscole" ha metriche leggermente diverse dal serif di sistema (il pallino del titolo piccolo sfiora il puntino della "i"); si risolve con il font definitivo.
-- La foglia placeholder è una forma semplice: la silhouette vera va fornita dalla grafica (ora usa `object-fit: cover`, quindi si ritaglia invece di rimpicciolirsi).
-- Le zampe lunghe con scritta (Diario, Archivio, ...) servono in Fase 2: servono gli SVG definitivi o una versione lunga dei placeholder.
-- Repository e deploy: il sito pubblicato (`/auguri/`) mostra ancora la Fase 0 finché non si fa il push di questa fase.
+- **Altezza dello schermo.** Il mockup ha proporzioni 940:1200 (circa 1,28); un telefono ha circa 2,1. Sul telefono si vedono quindi spazi vuoti più grandi tra gli elementi rispetto al disegno. Va deciso con la grafica se va bene così, se la cornice deve crescere in altezza o se serve una composizione pensata per il formato telefono.
+- Mancano gli SVG dei francobolli pieni (ora placeholder) e quelli di eventuali altri francobolli.
+- Il testo "FOTO/FRASE RANDOM DEL GIORNO" è un segnaposto temporaneo: sparisce in Fase 3.
+- Repository e deploy: il sito pubblicato si aggiorna con il push di questa fase.

@@ -1,18 +1,24 @@
-/* Palette ricavata dal mockup (valori approssimati: da confermare con chi fa la grafica) */
+/* Palette ricavata dagli SVG definitivi (Fase 1) */
 :root {
-  --bordeaux: #7a1616;
-  --mauve: #a06a64;
-  --pesca: #f4a07a;
-  --crema: #f0c9a0;
-  --rosa-chiaro: #fbd9cc;
-  --grigio-chiaro: #ededec;
-  --grigio: #e0dddc;
-  --grigio-testo: #8a8584;
-  --inchiostro: #1d1d1d;
+  --bordeaux: #6f211c;
+  --mauve: #9b6f67;
+  --rosso: #9f382d;
+  --pesca: #e49a77;
+  --arancio: #f0b77f;
+  --crema: #e7c5a4;
+  --rosa-chiaro: #f7dcce;
+  --beige: #eae1ce;
+  --senape: #b58441;
+  --verde-salvia: #95a5a2;
+  --verde-scuro: #3d4c36;
+  --grigio-chiaro: #efebeb;   /* cornice e striscia: #afa3a2 al 20% su bianco */
+  --grigio: #e2dbdc;          /* aree foto/frase: due strati al 20% */
+  --grigio-testo: #817d7d;
+  --inchiostro: #221f20;
 
-  /* Font: stack provvisori, da sostituire con i font finali */
+  /* Il titolo e "COLLEZIONE DI FRANCOBOLLI" sono SVG: il font serve solo per i testi in HTML */
   --font-titolo: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
-  --font-ui: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --font-ui: 'Arial', 'Helvetica Neue', Helvetica, sans-serif;
 
   --larghezza-foglio: 430px;
 }
@@ -56,9 +62,10 @@ body {
   }
 }
 
-/* Fase 1: il foglio è il "contenitore" di riferimento.
-   --u = 1 unità del mockup (larghezza foglio / 960), usata nelle pagine e nei componenti. */
+/* Fase 1: il foglio e il contenitore di riferimento.
+   --u = 1 punto del mockup: la pagina del PDF e 940 x 1200 e gli SVG sono disegnati nella stessa scala,
+   quindi un SVG largo 626,78 occupa calc(626.78 * var(--u)). */
 .foglio {
   container-type: inline-size;
-  --u: calc(100cqw / 960);
+  --u: calc(100cqw / 940);
 }

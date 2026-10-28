@@ -19,9 +19,9 @@ npm run build      # genera dist/
 
 Nota: se usi un dominio personalizzato o un repo chiamato `<utente>.github.io`, il `BASE` va impostato a `/` nel workflow.
 
-## Placeholder grafici
+## Grafica
 
-In `public/placeholders/` ci sono SVG provvisori. Quando arrivano quelli definitivi, sostituiscili mantenendo gli stessi nomi file e lo stesso rapporto d'aspetto (viewBox).
+Gli SVG definitivi sono in `public/grafica/` (nomi in minuscolo con trattini). In `public/placeholders/` restano solo quelli provvisori (per ora i due francobolli pieni): per sostituirli basta mantenere lo stesso nome file e lo stesso `viewBox`. La pagina del mockup è 940 x 1200 punti e gli SVG sono nella stessa scala (vedi `fasi/fase-1/STATO_SITO.md`).
 
 ## Foto e video
 

@@ -1,6 +1,6 @@
 # Prompt per la Fase 2 · Zampe animate e navigazione
 
-Incolla questo testo in una nuova chat, insieme a: il link del sito, il link al repository GitHub (o lo zip del progetto), il PDF del mockup (`ALI.pdf`) e, se ci sono, gli SVG definitivi (in particolare le zampe lunghe con scritta).
+Incolla questo testo in una nuova chat, insieme a: il link del sito, il link al repository GitHub (o lo zip del progetto), il PDF del mockup (`ALI.pdf`) e, se ci sono, gli SVG nuovi.
 
 ---
 
@@ -9,7 +9,7 @@ Sto costruendo il sito "minuscole – L'universo delle cose" con Astro (mobile-f
 **Link del sito:** https://sitocompleanno-star.github.io/auguri/
 **Repository:** [INCOLLA QUI]
 
-**Contesto:** leggi `ROADMAP.md`, `fasi/fase-1/REPORT.md` e `fasi/fase-1/STATO_SITO.md` nel repo (e, se serve, quelli della Fase 0). Il mockup è nel PDF allegato: le pagine 2-7 mostrano ogni zampa "allungata" con la scritta della sezione (Diario, Archivio, Luna Park, Club degli Amici, Caos).
+**Contesto:** leggi `ROADMAP.md`, `fasi/fase-1/REPORT.md` e `fasi/fase-1/STATO_SITO.md` nel repo (e, se serve, quelli della Fase 0). Il mockup è nel PDF allegato: le pagine 2-7 mostrano ogni zampa "allungata" con la scritta della sezione (Diario, Archivio, Luna Park, Club degli Amici, Caos). Gli SVG definitivi delle zampe lunghe (con scritta) sono già in `public/grafica/` (`zampa-diario.svg`, ecc.): nella home se ne vede solo la parte destra, ritagliata via CSS.
 
 **Obiettivo della Fase 2:**
 - al tap su una zampa, la zampa scivola fuori dal bordo sinistro mostrando il braccio lungo con il nome della sezione, poi si naviga alla pagina corrispondente
@@ -19,8 +19,8 @@ Sto costruendo il sito "minuscole – L'universo delle cose" con Astro (mobile-f
 - accessibilità: zampe raggiungibili da tastiera con nome accessibile (la scritta), focus visibile, `prefers-reduced-motion` rispettato (nessuna animazione, solo cambio pagina)
 
 **Vincoli:**
-- Mantieni il sistema di misura in unità mockup (`--u`, vedi `STATO_SITO.md`) e i componenti esistenti (`Zampa` va estesa, non riscritta).
-- Le zampe lunghe con scritta: usa gli SVG definitivi se li allego; altrimenti crea placeholder con la scritta in HTML/CSS sopra l'immagine (non dentro l'SVG), per poter cambiare il testo senza toccare la grafica.
+- Mantieni il sistema di misura in punti mockup (`--u` = larghezza foglio / 940, vedi `STATO_SITO.md`) e i componenti esistenti (`Zampa` va estesa, non riscritta).
+- Le zampe lunghe con scritta: usa gli SVG definitivi già presenti in `public/grafica/` (la scritta è già disegnata dentro l'SVG, non serve aggiungere testo; il nome per gli screen reader c'è già nel componente `Zampa`).
 - Nessuna dipendenza nuova senza motivo.
 - Media: solo GitHub (vedi "Gestione dei media" in `ROADMAP.md`).
 - Verifica con `npm run build` e controlla l'aspetto e l'animazione a 390px.

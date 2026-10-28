@@ -1,10 +1,11 @@
 ---
-// Cornice grigia con area foto e area frase. I contenuti arrivano dagli slot "foto" e "frase"
-// (in Fase 3 ci andranno la foto e la frase del giorno); senza slot si vedono i segnaposto.
+// Cornice grigia (SVG definitivo) con area foto e area frase.
+// I contenuti arrivano dagli slot "foto" e "frase" (in Fase 3 ci andranno la foto e la frase del giorno);
+// senza slot si vedono i segnaposto.
 const base = import.meta.env.BASE_URL;
 ---
 <div class="cornice">
-  <img class="cornice__sfondo" src={`${base}placeholders/cornice.svg`} alt="" width="320" height="340" />
+  <img class="cornice__sfondo" src={`${base}grafica/cornice.svg`} alt="" width="528.77" height="560.52" />
   <div class="cornice__area cornice__foto">
     <slot name="foto"><span class="cornice__segnaposto">FOTO RANDOM DEL GIORNO</span></slot>
   </div>
@@ -14,11 +15,11 @@ const base = import.meta.env.BASE_URL;
 </div>
 
 <style>
-  /* Le percentuali seguono il viewBox di cornice.svg (320x340) */
+  /* Misure in punti mockup, lette dal mockup: cornice 528,77 x 560,52; aree con margine 20 ai lati e 30 sopra/sotto */
   .cornice {
     position: relative;
-    width: 100%;
-    aspect-ratio: 320 / 340;
+    width: calc(528.77 * var(--u));
+    height: calc(560.52 * var(--u));
   }
   .cornice__sfondo {
     position: absolute;
@@ -28,21 +29,21 @@ const base = import.meta.env.BASE_URL;
   }
   .cornice__area {
     position: absolute;
-    left: 5%;
-    width: 90%;
+    left: calc(20.3 * var(--u));
+    width: calc(488.2 * var(--u));
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    border-radius: calc(22 * var(--u));
+    border-radius: calc(20 * var(--u));
     text-align: center;
   }
-  .cornice__foto { top: 4.706%; height: 67.647%; }
-  .cornice__frase { top: 76.47%; height: 18.824%; }
+  .cornice__foto  { top: calc(30 * var(--u));  height: calc(370 * var(--u)); }
+  .cornice__frase { top: calc(430 * var(--u)); height: calc(100 * var(--u)); }
   .cornice__segnaposto {
     font-family: var(--font-ui);
     font-weight: 700;
-    font-size: calc(20 * var(--u));
+    font-size: calc(19.5 * var(--u));
     color: var(--grigio-testo);
   }
 </style>

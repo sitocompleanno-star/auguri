@@ -1,18 +1,27 @@
 ---
-// Pulsante quadrato di un gioco. In Fase 1 è solo grafica; il collegamento ai giochi arriva dalla Fase 5.
+// Pulsante quadrato di un gioco. In Fase 1 e solo grafica; il collegamento ai giochi arriva dalla Fase 5.
 interface Props {
   file: string;
   nome: string;
+  w: number;
+  h: number;
 }
-const { file, nome } = Astro.props;
+const { file, nome, w, h } = Astro.props;
 const base = import.meta.env.BASE_URL;
 ---
-<img class="gioco" src={`${base}placeholders/${file}`} alt={`Gioco: ${nome}`} width="80" height="80" />
+<img
+  class="gioco"
+  src={`${base}grafica/${file}`}
+  alt={`Gioco: ${nome}`}
+  width={w}
+  height={h}
+  style={`--w:${w};--h:${h}`}
+/>
 
 <style>
   .gioco {
     display: block;
-    width: calc(110 * var(--u));
-    height: calc(110 * var(--u));
+    width: calc(var(--w) * var(--u));
+    height: calc(var(--h) * var(--u));
   }
 </style>

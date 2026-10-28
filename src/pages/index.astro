@@ -4,30 +4,28 @@ import Zampa from '../components/Zampa.astro';
 import Cornice from '../components/Cornice.astro';
 import PulsanteGioco from '../components/PulsanteGioco.astro';
 import StripFrancobolli from '../components/StripFrancobolli.astro';
-import { zampe, giochi, francobolli } from '../data/home';
+import { zampe, zampaVisibile, giochi, francobolli } from '../data/home';
 const base = import.meta.env.BASE_URL;
 ---
 <Base>
   <main class="home">
-    <img class="home__foglia" src={`${base}placeholders/foglia-sfondo.svg`} alt="" aria-hidden="true" width="400" height="800" />
+    <img class="home__foglia" src={`${base}grafica/sfondo-foglia.svg`} alt="" aria-hidden="true" width="343.15" height="1200" />
 
-    <h1 class="titolo">
-      <span class="titolo__sopra">L’UNIVERSO DELLE COSE</span>
-      <span class="titolo__nome">minuscole</span>
+    <h1 class="home__titolo">
+      <img src={`${base}grafica/titolo.svg`} alt="minuscole – L’universo delle cose" width="626.78" height="116.61" />
     </h1>
 
     <nav class="home__zampe" aria-label="Sezioni del sito">
-      {zampe.map((file) => <Zampa file={file} />)}
+      {zampe.map((z) => <Zampa {...z} visibile={zampaVisibile} />)}
     </nav>
 
-    <div class="home__destra">
-      <div class="home__spazio"></div>
-      <Cornice />
-      <div class="home__spazio home__spazio--giochi"></div>
-      <div class="home__giochi">
-        {giochi.map((g) => <PulsanteGioco file={g.file} nome={g.nome} />)}
-      </div>
-      <div class="home__spazio home__spazio--strip"></div>
+    <div class="home__cornice"><Cornice /></div>
+
+    <div class="home__giochi">
+      {giochi.map((g) => <PulsanteGioco {...g} />)}
+    </div>
+
+    <div class="home__strip">
       <StripFrancobolli totale={francobolli.totale} ottenuti={francobolli.ottenuti} />
     </div>
   </main>
@@ -35,98 +33,67 @@ const base = import.meta.env.BASE_URL;
 
 <style>
   /*
-    Le misure sono in "unità mockup": --u = larghezza del foglio / 960 (la larghezza della pagina del PDF).
-    Così tutto scala con il foglio (390px sul telefono) e le proporzioni restano quelle del mockup.
-    Se lo schermo è più alto del mockup, a crescere sono solo gli spazi tra gli elementi.
+    Tutto e posizionato con le coordinate del mockup (pagina 940 x 1200, 1 punto = var(--u)).
+    Se lo schermo e piu alto del mockup, ogni blocco scende di una quota (--k) dello spazio in piu:
+    cosi le dimensioni restano quelle del mockup e a crescere sono solo gli spazi.
+    extra = 100% - 1200 * var(--u)   (100% = altezza della home)
   */
   .home {
     position: relative;
-    min-height: max(100dvh, calc(1232 * var(--u)));
+    min-height: max(100dvh, calc(1200 * var(--u)));
   }
 
+  /* Foglia: larga come nel mockup (bordo verticale netto a 343); se la pagina e piu alta si ingrandisce e si ritaglia a destra */
   .home__foglia {
     position: absolute;
     top: 0;
-    left: -13.75%;
-    width: 64%;
+    left: 0;
+    width: calc(343.15 * var(--u));
     height: 100%;
     object-fit: cover;
+    object-position: 0 0;
     z-index: 0;
   }
 
-  /* Titolo in alto a destra */
-  .titolo {
+  .home__titolo {
     position: absolute;
     z-index: 2;
-    top: calc(98 * var(--u));
-    right: calc(25 * var(--u));
-    width: calc(647 * var(--u));
+    left: calc(263.2 * var(--u));
+    top: calc(100 * var(--u));
     margin: 0;
-    font-weight: 400;
+    line-height: 0;
   }
-  .titolo__sopra {
-    position: relative;
+  .home__titolo img {
     display: block;
-    margin-left: calc(169 * var(--u));
-    font-family: var(--font-ui);
-    font-weight: 800;
-    font-size: calc(27.5 * var(--u));
-    line-height: 1;
-    white-space: nowrap;
-    color: var(--bordeaux);
-  }
-  .titolo__sopra::before {
-    content: '';
-    position: absolute;
-    left: calc(-29 * var(--u));
-    top: calc(3 * var(--u));
-    width: calc(19 * var(--u));
-    height: calc(19 * var(--u));
-    border-radius: 50%;
-    background: var(--bordeaux);
-  }
-  .titolo__nome {
-    display: block;
-    margin-top: calc(-16 * var(--u));
-    font-family: var(--font-titolo);
-    font-style: italic;
-    font-size: calc(152 * var(--u));
-    line-height: 1.05;
-    letter-spacing: -0.01em;
-    white-space: nowrap;
-    color: var(--bordeaux);
+    width: calc(626.78 * var(--u));
+    height: calc(116.61 * var(--u));
   }
 
-  /* Zampe a sinistra: escono dal bordo; gli spazi si allungano se lo schermo è alto */
-  .home__zampe {
-    position: absolute;
-    z-index: 1;
-    left: 0;
-    top: calc(355 * var(--u));
-    bottom: calc(150 * var(--u));
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
+  .home__zampe { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+  .home__zampe :global(.zampa) { pointer-events: auto; }
 
-  /* Colonna di destra: cornice, giochi, francobolli */
-  .home__destra {
+  .home__cornice {
     position: absolute;
     z-index: 1;
-    top: 0;
-    bottom: 0;
-    left: calc(391 * var(--u));
-    width: calc(544 * var(--u));
-    padding-bottom: calc(32 * var(--u));
-    display: flex;
-    flex-direction: column;
+    left: calc(380.5 * var(--u));
+    top: calc(284 * var(--u) + (100% - 1200 * var(--u)) * 0.3);
   }
-  .home__spazio { flex: 1 0 calc(292 * var(--u)); }
-  .home__spazio--giochi { flex-basis: calc(55 * var(--u)); }
-  .home__spazio--strip { flex-basis: calc(34 * var(--u)); }
 
   .home__giochi {
+    position: absolute;
+    z-index: 1;
+    left: calc(380.5 * var(--u));
+    width: calc(528.5 * var(--u));
+    top: calc(896 * var(--u) + (100% - 1200 * var(--u)) * 0.65);
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .home__strip {
+    position: absolute;
+    z-index: 1;
+    left: calc(380.5 * var(--u));
+    top: calc(1037 * var(--u) + (100% - 1200 * var(--u)) * 1);
   }
 </style>

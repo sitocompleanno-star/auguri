@@ -1,18 +1,39 @@
 ---
-// Zampa del menu: solo la parte visibile che esce dal bordo sinistro (nessuna scritta in Fase 1).
+// Zampa del menu: dell'SVG completo si vede solo la parte a destra, che esce dal bordo sinistro
+// (nessuna scritta in Fase 1). L'SVG intero resta disponibile per la Fase 2.
 interface Props {
   file: string;
+  nome: string;
+  w: number;   // larghezza del viewBox
+  h: number;   // altezza del viewBox
+  top: number; // posizione verticale nel mockup
+  k?: number;  // quota dello spazio extra (vedi data/home.ts)
+  visibile?: number;
 }
-const { file } = Astro.props;
+const { file, nome, w, h, top, k = 0, visibile = 152 } = Astro.props;
 const base = import.meta.env.BASE_URL;
 ---
-<img class="zampa" src={`${base}placeholders/${file}`} alt="" width="160" height="110" />
+<div class="zampa" style={`--top:${top};--k:${k};--w:${w};--h:${h};--vis:${visibile}`}>
+  <img src={`${base}grafica/${file}`} alt="" width={w} height={h} />
+  <span class="visually-hidden">{nome}</span>
+</div>
 
 <style>
   .zampa {
+    position: absolute;
+    left: 0;
+    top: calc(var(--top) * var(--u) + (100% - 1200 * var(--u)) * var(--k));
+    width: calc(var(--vis) * var(--u));
+    height: calc(var(--h) * var(--u));
+    overflow: hidden;
+  }
+  .zampa img {
+    position: absolute;
+    right: 0;
+    top: 0;
     display: block;
-    width: calc(165 * var(--u));
-    height: auto;
-    filter: drop-shadow(calc(6 * var(--u)) calc(8 * var(--u)) 0 rgba(0, 0, 0, 0.1));
+    max-width: none;
+    width: calc(var(--w) * var(--u));
+    height: calc(var(--h) * var(--u));
   }
 </style>

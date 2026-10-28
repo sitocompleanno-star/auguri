@@ -1,5 +1,6 @@
 ---
 // Striscia "Collezione di francobolli": slot pieni (ottenuti) e vuoti fino a `totale`.
+// Gli slot vuoti sono l'SVG definitivo (grafica/francobollo-vuoto.svg); quelli pieni, per ora, placeholder.
 interface Props {
   totale?: number;
   ottenuti?: string[];
@@ -9,15 +10,16 @@ const base = import.meta.env.BASE_URL;
 const slot = Array.from({ length: totale }, (_, i) => ottenuti[i] ?? null);
 ---
 <section class="strip" aria-labelledby="titolo-francobolli">
-  <h2 id="titolo-francobolli" class="strip__titolo">COLLEZIONE DI FRANCOBOLLI</h2>
+  <h2 id="titolo-francobolli" class="visually-hidden">Collezione di francobolli</h2>
+  <img class="strip__sfondo" src={`${base}grafica/collezione-francobolli.svg`} alt="" width="528.97" height="132.88" />
   <ul class="strip__slot">
     {slot.map((file) => (
       <li>
         <img
-          src={`${base}placeholders/${file ?? 'francobollo-vuoto.svg'}`}
+          src={file ? `${base}placeholders/${file}` : `${base}grafica/francobollo-vuoto.svg`}
           alt={file ? 'Francobollo ottenuto' : 'Francobollo ancora da ottenere'}
-          width="40"
-          height="48"
+          width="45.44"
+          height="58.1"
         />
       </li>
     ))}
@@ -25,29 +27,31 @@ const slot = Array.from({ length: totale }, (_, i) => ottenuti[i] ?? null);
 </section>
 
 <style>
+  /* Striscia 528,97 x 132,88; slot 45,44 x 58,1 con passo 55,4 (misurato sul mockup) */
   .strip {
-    background: var(--grigio-chiaro);
-    padding: calc(18 * var(--u)) calc(21 * var(--u)) calc(19 * var(--u));
+    position: relative;
+    width: calc(528.97 * var(--u));
+    height: calc(132.88 * var(--u));
   }
-  .strip__titolo {
-    margin: 0 0 calc(11 * var(--u));
-    font-family: var(--font-ui);
-    font-weight: 800;
-    font-size: calc(28.5 * var(--u));
-    line-height: 1;
-    white-space: nowrap;
-    color: var(--inchiostro);
+  .strip__sfondo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
   }
   .strip__slot {
+    position: absolute;
+    left: calc(20.3 * var(--u));
+    top: calc(54.5 * var(--u));
     display: flex;
-    justify-content: space-between;
+    gap: calc(9.96 * var(--u));
     margin: 0;
     padding: 0;
     list-style: none;
   }
   .strip__slot img {
     display: block;
-    width: calc(48 * var(--u));
-    height: auto;
+    width: calc(45.44 * var(--u));
+    height: calc(58.1 * var(--u));
   }
 </style>

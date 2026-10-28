@@ -5,7 +5,7 @@ Sito web mobile-first basato sul mockup `ALI.pdf`. Stack: **Astro** + piccole is
 ## Regole di lavoro
 
 - Mobile-first: si progetta per ~390px di larghezza; il desktop viene dopo (Fase 8).
-- Gli SVG finali non sono ancora pronti: si usano **placeholder** con gli stessi nomi file e dimensioni degli SVG definitivi, così basta sostituirli.
+- Gli SVG definitivi della home sono in `public/grafica/` (dalla Fase 1). Per la grafica non ancora pronta si usano **placeholder** in `public/placeholders/`, con stessa misura (`viewBox`) di quelli definitivi, così basta sostituirli.
 - A fine di ogni fase si crea una cartella `fasi/fase-N/` con:
   - `REPORT.md`: cosa è stato fatto, decisioni, problemi aperti
   - `STATO_SITO.md`: stato attuale del sito (struttura, componenti, dati, cosa funziona / non funziona)
@@ -18,8 +18,8 @@ Setup Astro, configurazione GitHub Pages (`base`, workflow di deploy), palette e
 **Fatto quando:** `npm run build` passa e il deploy automatico è pronto; esiste una home minima online.
 
 ### Fase 1 · Home statica (mobile) ✅
-Layout fedele al mockup: titolo, sfondo con foglia, 5 zampe a sinistra, cornice con foto e frase (segnaposto), 4 pulsanti giochi, striscia francobolli.
-**Fatto quando:** la home a 390px è riconoscibile rispetto al mockup.
+Layout fedele al mockup: titolo, sfondo con foglia, 5 zampe a sinistra, cornice con foto e frase (segnaposto), 4 pulsanti giochi, striscia francobolli. Con gli SVG definitivi.
+**Fatto quando:** la home a 390px è riconoscibile rispetto al mockup. ✅ (2026-10-28)
 
 ### Fase 2 · Zampe animate e navigazione
 Zampa che scivola fuori al tap, mostrando il nome della sezione; navigazione verso le pagine (Diario, Archivio, Luna Park, Club degli Amici, Caos); transizioni tra pagine; pagine interne vuote con titolo.
@@ -64,7 +64,7 @@ Decisione: **solo GitHub**, nessun servizio esterno per i file; i video vanno su
 - Hosting: GitHub Pages (solo GitHub, 1 GB basta)
 - Video: YouTube (non in elenco), non nel repo
 - Target: mobile-first
-- SVG: placeholder finché la grafica non è pronta
+- SVG: definitivi per la home (Fase 1); placeholder per ciò che manca (francobolli pieni)
 
 ## Da decidere
 
