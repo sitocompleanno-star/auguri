@@ -17,7 +17,7 @@ Sito web mobile-first basato sul mockup `ALI.pdf`. Stack: **Astro** + piccole is
 Setup Astro, configurazione GitHub Pages (`base`, workflow di deploy), palette e font, struttura cartelle, placeholder SVG, pagine vuote.
 **Fatto quando:** `npm run build` passa e il deploy automatico è pronto; esiste una home minima online.
 
-### Fase 1 · Home statica (mobile)
+### Fase 1 · Home statica (mobile) ✅
 Layout fedele al mockup: titolo, sfondo con foglia, 5 zampe a sinistra, cornice con foto e frase (segnaposto), 4 pulsanti giochi, striscia francobolli.
 **Fatto quando:** la home a 390px è riconoscibile rispetto al mockup.
 

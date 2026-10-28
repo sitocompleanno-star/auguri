@@ -1,16 +1,132 @@
 ---
 import Base from '../layouts/Base.astro';
+import Zampa from '../components/Zampa.astro';
+import Cornice from '../components/Cornice.astro';
+import PulsanteGioco from '../components/PulsanteGioco.astro';
+import StripFrancobolli from '../components/StripFrancobolli.astro';
+import { zampe, giochi, francobolli } from '../data/home';
 const base = import.meta.env.BASE_URL;
 ---
 <Base>
-  <main style="padding: 2rem 1.5rem; text-align: center;">
-    <p style="margin:0; font-weight:700; letter-spacing:.04em; color: var(--bordeaux); font-size:.8rem;">
-      L’UNIVERSO DELLE COSE
-    </p>
-    <h1 style="margin:.2rem 0 1.5rem; font-family: var(--font-titolo); font-style: italic; font-weight: 400; font-size: 3.5rem; color: var(--bordeaux);">
-      minuscole
+  <main class="home">
+    <img class="home__foglia" src={`${base}placeholders/foglia-sfondo.svg`} alt="" aria-hidden="true" width="400" height="800" />
+
+    <h1 class="titolo">
+      <span class="titolo__sopra">L’UNIVERSO DELLE COSE</span>
+      <span class="titolo__nome">minuscole</span>
     </h1>
-    <img src={`${base}placeholders/zampa-1.svg`} alt="" width="160" height="90" />
-    <p style="color: var(--grigio-testo);">Fase 0 · fondamenta pronte. La home arriva in Fase 1.</p>
+
+    <nav class="home__zampe" aria-label="Sezioni del sito">
+      {zampe.map((file) => <Zampa file={file} />)}
+    </nav>
+
+    <div class="home__destra">
+      <div class="home__spazio"></div>
+      <Cornice />
+      <div class="home__spazio home__spazio--giochi"></div>
+      <div class="home__giochi">
+        {giochi.map((g) => <PulsanteGioco file={g.file} nome={g.nome} />)}
+      </div>
+      <div class="home__spazio home__spazio--strip"></div>
+      <StripFrancobolli totale={francobolli.totale} ottenuti={francobolli.ottenuti} />
+    </div>
   </main>
 </Base>
+
+<style>
+  /*
+    Le misure sono in "unità mockup": --u = larghezza del foglio / 960 (la larghezza della pagina del PDF).
+    Così tutto scala con il foglio (390px sul telefono) e le proporzioni restano quelle del mockup.
+    Se lo schermo è più alto del mockup, a crescere sono solo gli spazi tra gli elementi.
+  */
+  .home {
+    position: relative;
+    min-height: max(100dvh, calc(1232 * var(--u)));
+  }
+
+  .home__foglia {
+    position: absolute;
+    top: 0;
+    left: -13.75%;
+    width: 64%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+
+  /* Titolo in alto a destra */
+  .titolo {
+    position: absolute;
+    z-index: 2;
+    top: calc(98 * var(--u));
+    right: calc(25 * var(--u));
+    width: calc(647 * var(--u));
+    margin: 0;
+    font-weight: 400;
+  }
+  .titolo__sopra {
+    position: relative;
+    display: block;
+    margin-left: calc(169 * var(--u));
+    font-family: var(--font-ui);
+    font-weight: 800;
+    font-size: calc(27.5 * var(--u));
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--bordeaux);
+  }
+  .titolo__sopra::before {
+    content: '';
+    position: absolute;
+    left: calc(-29 * var(--u));
+    top: calc(3 * var(--u));
+    width: calc(19 * var(--u));
+    height: calc(19 * var(--u));
+    border-radius: 50%;
+    background: var(--bordeaux);
+  }
+  .titolo__nome {
+    display: block;
+    margin-top: calc(-16 * var(--u));
+    font-family: var(--font-titolo);
+    font-style: italic;
+    font-size: calc(152 * var(--u));
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    color: var(--bordeaux);
+  }
+
+  /* Zampe a sinistra: escono dal bordo; gli spazi si allungano se lo schermo è alto */
+  .home__zampe {
+    position: absolute;
+    z-index: 1;
+    left: 0;
+    top: calc(355 * var(--u));
+    bottom: calc(150 * var(--u));
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  /* Colonna di destra: cornice, giochi, francobolli */
+  .home__destra {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    bottom: 0;
+    left: calc(391 * var(--u));
+    width: calc(544 * var(--u));
+    padding-bottom: calc(32 * var(--u));
+    display: flex;
+    flex-direction: column;
+  }
+  .home__spazio { flex: 1 0 calc(292 * var(--u)); }
+  .home__spazio--giochi { flex-basis: calc(55 * var(--u)); }
+  .home__spazio--strip { flex-basis: calc(34 * var(--u)); }
+
+  .home__giochi {
+    display: flex;
+    justify-content: space-between;
+  }
+</style>

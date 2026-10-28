@@ -55,3 +55,10 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Fase 1: il foglio è il "contenitore" di riferimento.
+   --u = 1 unità del mockup (larghezza foglio / 960), usata nelle pagine e nei componenti. */
+.foglio {
+  container-type: inline-size;
+  --u: calc(100cqw / 960);
+}

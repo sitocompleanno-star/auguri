@@ -1,0 +1,48 @@
+---
+// Cornice grigia con area foto e area frase. I contenuti arrivano dagli slot "foto" e "frase"
+// (in Fase 3 ci andranno la foto e la frase del giorno); senza slot si vedono i segnaposto.
+const base = import.meta.env.BASE_URL;
+---
+<div class="cornice">
+  <img class="cornice__sfondo" src={`${base}placeholders/cornice.svg`} alt="" width="320" height="340" />
+  <div class="cornice__area cornice__foto">
+    <slot name="foto"><span class="cornice__segnaposto">FOTO RANDOM DEL GIORNO</span></slot>
+  </div>
+  <div class="cornice__area cornice__frase">
+    <slot name="frase"><span class="cornice__segnaposto">FRASE RANDOM DEL GIORNO</span></slot>
+  </div>
+</div>
+
+<style>
+  /* Le percentuali seguono il viewBox di cornice.svg (320x340) */
+  .cornice {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 320 / 340;
+  }
+  .cornice__sfondo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .cornice__area {
+    position: absolute;
+    left: 5%;
+    width: 90%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: calc(22 * var(--u));
+    text-align: center;
+  }
+  .cornice__foto { top: 4.706%; height: 67.647%; }
+  .cornice__frase { top: 76.47%; height: 18.824%; }
+  .cornice__segnaposto {
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: calc(20 * var(--u));
+    color: var(--grigio-testo);
+  }
+</style>

@@ -1,0 +1,53 @@
+---
+// Striscia "Collezione di francobolli": slot pieni (ottenuti) e vuoti fino a `totale`.
+interface Props {
+  totale?: number;
+  ottenuti?: string[];
+}
+const { totale = 9, ottenuti = [] } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const slot = Array.from({ length: totale }, (_, i) => ottenuti[i] ?? null);
+---
+<section class="strip" aria-labelledby="titolo-francobolli">
+  <h2 id="titolo-francobolli" class="strip__titolo">COLLEZIONE DI FRANCOBOLLI</h2>
+  <ul class="strip__slot">
+    {slot.map((file) => (
+      <li>
+        <img
+          src={`${base}placeholders/${file ?? 'francobollo-vuoto.svg'}`}
+          alt={file ? 'Francobollo ottenuto' : 'Francobollo ancora da ottenere'}
+          width="40"
+          height="48"
+        />
+      </li>
+    ))}
+  </ul>
+</section>
+
+<style>
+  .strip {
+    background: var(--grigio-chiaro);
+    padding: calc(18 * var(--u)) calc(21 * var(--u)) calc(19 * var(--u));
+  }
+  .strip__titolo {
+    margin: 0 0 calc(11 * var(--u));
+    font-family: var(--font-ui);
+    font-weight: 800;
+    font-size: calc(28.5 * var(--u));
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--inchiostro);
+  }
+  .strip__slot {
+    display: flex;
+    justify-content: space-between;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .strip__slot img {
+    display: block;
+    width: calc(48 * var(--u));
+    height: auto;
+  }
+</style>

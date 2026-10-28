@@ -1,0 +1,18 @@
+---
+// Zampa del menu: solo la parte visibile che esce dal bordo sinistro (nessuna scritta in Fase 1).
+interface Props {
+  file: string;
+}
+const { file } = Astro.props;
+const base = import.meta.env.BASE_URL;
+---
+<img class="zampa" src={`${base}placeholders/${file}`} alt="" width="160" height="110" />
+
+<style>
+  .zampa {
+    display: block;
+    width: calc(165 * var(--u));
+    height: auto;
+    filter: drop-shadow(calc(6 * var(--u)) calc(8 * var(--u)) 0 rgba(0, 0, 0, 0.1));
+  }
+</style>
