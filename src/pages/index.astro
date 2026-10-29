@@ -16,7 +16,7 @@ const base = import.meta.env.BASE_URL;
     </h1>
 
     <nav class="home__zampe" aria-label="Sezioni del sito">
-      {zampe.map((z) => <Zampa {...z} visibile={zampaVisibile} />)}
+      {zampe.map((z) => <Zampa {...z} href={`${base}${z.slug}/`} visibile={zampaVisibile} />)}
     </nav>
 
     <div class="home__cornice"><Cornice /></div>

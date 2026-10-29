@@ -1,39 +1,90 @@
 ---
-// Zampa del menu: dell'SVG completo si vede solo la parte a destra, che esce dal bordo sinistro
-// (nessuna scritta in Fase 1). L'SVG intero resta disponibile per la Fase 2.
+// Zampa del menu (Fase 2). Dell'SVG completo (braccio lungo con la scritta) a riposo si vede solo la parte
+// destra, che esce dal bordo sinistro: il resto sta fuori dal foglio, che lo ritaglia (overflow: hidden).
+// Al tap l'SVG scivola verso destra mostrando il braccio con il nome, poi lo script in Base.astro naviga.
+//
+// Due modi:
+//  - home (default): link verso `href`; al click il braccio si estende
+//  - `estesa`: pagina interna; il braccio e gia esteso e, al click, si ritrae e torna alla home
 interface Props {
   file: string;
   nome: string;
+  href: string;
   w: number;   // larghezza del viewBox
   h: number;   // altezza del viewBox
   top: number; // posizione verticale nel mockup
   k?: number;  // quota dello spazio extra (vedi data/home.ts)
   visibile?: number;
+  estesa?: boolean;
 }
-const { file, nome, w, h, top, k = 0, visibile = 152 } = Astro.props;
+const { file, nome, href, w, h, top, k = 0, visibile = 152, estesa = false } = Astro.props;
 const base = import.meta.env.BASE_URL;
 ---
-<div class="zampa" style={`--top:${top};--k:${k};--w:${w};--h:${h};--vis:${visibile}`}>
+<a
+  class:list={['zampa', { 'zampa--estesa': estesa }]}
+  href={href}
+  data-zampa={estesa ? 'chiudi' : 'apri'}
+  style={`--top:${top};--k:${k};--w:${w};--h:${h};--vis:${visibile}`}
+>
   <img src={`${base}grafica/${file}`} alt="" width={w} height={h} />
-  <span class="visually-hidden">{nome}</span>
-</div>
+  <span class="visually-hidden">{estesa ? 'Torna alla home' : nome}</span>
+</a>
 
 <style>
   .zampa {
+    --durata: 480ms;
     position: absolute;
     left: 0;
     top: calc(var(--top) * var(--u) + (100% - 1200 * var(--u)) * var(--k));
     width: calc(var(--vis) * var(--u));
     height: calc(var(--h) * var(--u));
-    overflow: hidden;
+    display: block;
+    color: inherit;
+    -webkit-tap-highlight-color: transparent;
   }
+  .zampa--estesa { width: calc(var(--w) * var(--u)); }
+
   .zampa img {
     position: absolute;
-    right: 0;
+    left: 0;
     top: 0;
     display: block;
     max-width: none;
     width: calc(var(--w) * var(--u));
     height: calc(var(--h) * var(--u));
+    /* a riposo: braccio fuori dal bordo sinistro, si vedono solo gli ultimi --vis punti */
+    --fuori: calc((var(--vis) - var(--w)) * var(--u));
+    transform: translateX(var(--fuori));
+    transition: transform var(--durata) cubic-bezier(0.3, 0.7, 0.2, 1);
+    will-change: transform;
+  }
+  .zampa--estesa img { transform: none; }
+
+  /* animazione in corso (classe messa dallo script): la zampa passa sopra le altre */
+  .zampa.is-moving { z-index: 3; }
+  .zampa.is-moving img { transform: none; }
+  .zampa--estesa.is-moving img { transform: translateX(var(--fuori)); }
+
+  /* piccolo "sbirciare" su dispositivi con puntatore, e con la tastiera */
+  @media (hover: hover) {
+    .zampa:not(.zampa--estesa):not(.is-moving):hover img {
+      transform: translateX(calc(var(--fuori) + 14 * var(--u)));
+    }
+  }
+
+  /* focus visibile: contorno bordeaux dentro il bordo del foglio, con alone chiaro */
+  .zampa:focus { outline: none; }
+  .zampa:focus-visible {
+    outline: calc(5 * var(--u)) solid var(--bordeaux);
+    outline-offset: calc(-5 * var(--u));
+    border-radius: calc(12 * var(--u));
+    background: rgb(247 220 206 / 0.55);
+  }
+  .zampa:not(.zampa--estesa):focus-visible:not(.is-moving) img {
+    transform: translateX(calc(var(--fuori) + 14 * var(--u)));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .zampa img { transition: none; }
   }
 </style>

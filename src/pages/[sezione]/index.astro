@@ -1,0 +1,91 @@
+---
+// Pagine interne (Fase 2): una sola rotta per le 5 sezioni, contenuti vuoti fino alla Fase 7.
+import Base from '../../layouts/Base.astro';
+import Zampa from '../../components/Zampa.astro';
+import { zampe, zampaVisibile } from '../../data/home';
+
+export function getStaticPaths() {
+  return zampe.map((z) => ({ params: { sezione: z.slug }, props: { z } }));
+}
+const { z } = Astro.props;
+const base = import.meta.env.BASE_URL;
+---
+<Base titolo={`${z.nome} · minuscole`}>
+  <main class="interna">
+    <img class="interna__foglia" src={`${base}grafica/sfondo-foglia.svg`} alt="" aria-hidden="true" width="343.15" height="1200" />
+
+    <a class="interna__titolo" href={base} aria-label="minuscole – L’universo delle cose: torna alla home">
+      <img src={`${base}grafica/titolo.svg`} alt="" width="626.78" height="116.61" />
+    </a>
+
+    <Zampa {...z} href={base} visibile={zampaVisibile} estesa />
+
+    <div class="interna__contenuto">
+      <h1>{z.nome}</h1>
+      <p>Pagina in costruzione.</p>
+      <a class="interna__indietro" href={base} data-zampa="chiudi">← torna alla home</a>
+    </div>
+  </main>
+</Base>
+
+<style>
+  /* Stesso foglio e stesse misure della home (punti mockup): la zampa sta dove stava nella home. */
+  .interna {
+    position: relative;
+    min-height: max(100dvh, calc(1200 * var(--u)));
+  }
+  .interna__foglia {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: calc(343.15 * var(--u));
+    height: 100%;
+    object-fit: cover;
+    object-position: 0 0;
+    z-index: 0;
+  }
+  .interna__titolo {
+    position: absolute;
+    z-index: 2;
+    left: calc(263.2 * var(--u));
+    top: calc(100 * var(--u));
+    line-height: 0;
+  }
+  .interna__titolo img {
+    display: block;
+    width: calc(626.78 * var(--u));
+    height: calc(116.61 * var(--u));
+  }
+  .interna__titolo:focus-visible,
+  .interna__indietro:focus-visible {
+    outline: 3px solid var(--bordeaux);
+    outline-offset: 3px;
+  }
+  .interna__contenuto {
+    position: absolute;
+    z-index: 2;
+    left: calc(380.5 * var(--u));
+    width: calc(528.5 * var(--u));
+    top: calc(284 * var(--u));
+  }
+  .interna__contenuto h1 {
+    margin: 0 0 0.3em;
+    font-family: var(--font-titolo);
+    font-style: italic;
+    font-weight: 400;
+    font-size: calc(72 * var(--u));
+    line-height: 1.1;
+    color: var(--bordeaux);
+  }
+  .interna__contenuto p {
+    margin: 0 0 1.5em;
+    color: var(--grigio-testo);
+    font-size: calc(30 * var(--u));
+  }
+  .interna__indietro {
+    color: var(--bordeaux);
+    font-weight: 700;
+    font-size: calc(30 * var(--u));
+    text-decoration: none;
+  }
+</style>

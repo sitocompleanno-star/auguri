@@ -21,9 +21,9 @@ Setup Astro, configurazione GitHub Pages (`base`, workflow di deploy), palette e
 Layout fedele al mockup: titolo, sfondo con foglia, 5 zampe a sinistra, cornice con foto e frase (segnaposto), 4 pulsanti giochi, striscia francobolli. Con gli SVG definitivi.
 **Fatto quando:** la home a 390px è riconoscibile rispetto al mockup. ✅ (2026-10-28)
 
-### Fase 2 · Zampe animate e navigazione
+### Fase 2 · Zampe animate e navigazione ✅
 Zampa che scivola fuori al tap, mostrando il nome della sezione; navigazione verso le pagine (Diario, Archivio, Luna Park, Club degli Amici, Caos); transizioni tra pagine; pagine interne vuote con titolo.
-**Fatto quando:** si naviga tra tutte le pagine con animazione fluida su telefono.
+**Fatto quando:** si naviga tra tutte le pagine con animazione fluida su telefono. ✅ (2026-10-29; da provare su telefono reale)
 
 ### Fase 3 · Foto e frase del giorno
 Dati in `src/data/foto.json` e `frasi.json`; scelta deterministica dalla data (stessa foto/frase per tutto il giorno). Foto in `public/media/foto/`, già compresse (vedi "Gestione dei media").

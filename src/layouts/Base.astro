@@ -18,5 +18,38 @@ const { titolo = 'minuscole – L’universo delle cose' } = Astro.props;
     <div class="foglio">
       <slot />
     </div>
+
+    <script>
+      // Zampe: al click si anima il braccio (CSS), poi si naviga. Con prefers-reduced-motion
+      // o con tasti modificatori/click centrale non si intercetta nulla: il link funziona normalmente.
+      const riduci = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+      document.addEventListener('click', (e) => {
+        const a = (e.target as Element).closest<HTMLAnchorElement>('a[data-zampa]');
+        if (!a || e.defaultPrevented || e.button !== 0) return;
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        if (riduci.matches) return;
+
+        e.preventDefault();
+        if (a.classList.contains('is-moving')) return;
+
+        // Pagina interna: anima la zampa della pagina (sempre una sola); home: quella cliccata
+        const zampa = a.classList.contains('zampa') ? a : document.querySelector<HTMLElement>('.zampa');
+        const img = zampa?.querySelector('img');
+        const vai = () => { window.location.assign(a.href); };
+        if (!zampa || !img) { vai(); return; }
+
+        zampa.classList.add('is-moving');
+        let fatto = false;
+        const finisci = () => { if (!fatto) { fatto = true; vai(); } };
+        img.addEventListener('transitionend', finisci, { once: true });
+        window.setTimeout(finisci, 800); // rete di sicurezza se transitionend non arriva
+      });
+
+      // Tornando indietro dalla cache del browser (bfcache) la zampa non deve restare "aperta"
+      window.addEventListener('pageshow', (e) => {
+        if (e.persisted) document.querySelectorAll('.is-moving').forEach((el) => el.classList.remove('is-moving'));
+      });
+    </script>
   </body>
 </html>

@@ -69,3 +69,20 @@ body {
   container-type: inline-size;
   --u: calc(100cqw / 940);
 }
+
+/* Fase 2 · Transizioni tra pagine: View Transitions "cross-document" del browser (nessuna libreria).
+   Dove non sono supportate (es. Firefox) si passa semplicemente da una pagina all'altra. */
+@view-transition {
+  navigation: auto;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 280ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

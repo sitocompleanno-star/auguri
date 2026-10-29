@@ -5,13 +5,13 @@
 // e la quota dello spazio in piu che scende sotto di lui (0 = resta dov'e nel mockup, 1 = scende tutto).
 
 export const zampe = [
-  // file: SVG completo (braccio lungo con scritta, servira in Fase 2). w/h: dimensioni del viewBox.
+  // slug: percorso della pagina (/<slug>/). file: SVG completo (braccio lungo con scritta, usato in Fase 2). w/h: dimensioni del viewBox.
   // top: posizione verticale nel mockup. Nella home si vede solo la parte a destra (152 di larghezza).
-  { nome: 'Diario',           file: 'zampa-diario.svg',     w: 352.77, h: 132.48, top: 328, k: 0.08 },
-  { nome: 'Archivio',         file: 'zampa-archivio.svg',   w: 352.76, h: 105.12, top: 505, k: 0.3 },
-  { nome: 'Luna Park',        file: 'zampa-luna-park.svg',  w: 352.76, h: 134.2,  top: 630, k: 0.52 },
-  { nome: 'Club degli Amici', file: 'zampa-club-amici.svg', w: 352.76, h: 132.97, top: 783, k: 0.76 },
-  { nome: 'Caos',             file: 'zampa-caos.svg',       w: 351.78, h: 110.79, top: 950, k: 1 },
+  { nome: 'Diario',           slug: 'diario',     file: 'zampa-diario.svg',     w: 352.77, h: 132.48, top: 328, k: 0.08 },
+  { nome: 'Archivio',         slug: 'archivio',   file: 'zampa-archivio.svg',   w: 352.76, h: 105.12, top: 505, k: 0.3 },
+  { nome: 'Luna Park',        slug: 'luna-park',  file: 'zampa-luna-park.svg',  w: 352.76, h: 134.2,  top: 630, k: 0.52 },
+  { nome: 'Club degli Amici', slug: 'club-amici', file: 'zampa-club-amici.svg', w: 352.76, h: 132.97, top: 783, k: 0.76 },
+  { nome: 'Caos',             slug: 'caos',       file: 'zampa-caos.svg',       w: 351.78, h: 110.79, top: 950, k: 1 },
 ];
 export const zampaVisibile = 152; // larghezza della parte che esce dal bordo sinistro
 

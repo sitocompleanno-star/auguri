@@ -1,6 +1,6 @@
 # Report · Fase 1 · Home statica (mobile)
 
-Data: 2026-10-28
+Data: 2026-10-28 (aggiornato 2026-10-29)
 
 ## Obiettivo
 Realizzare la home fedele al mockup (`ALI.pdf`, pagina 1) a larghezza telefono (~390px), senza animazioni, usando gli SVG definitivi forniti (cartella "pagina iniziale").
@@ -29,7 +29,7 @@ Realizzare la home fedele al mockup (`ALI.pdf`, pagina 1) a larghezza telefono (
 - Le zampe sono decorative in questa fase (nessun link, `alt=""`, nome sezione solo per screen reader); diventano link in Fase 2.
 
 ## Problemi aperti
-- **Altezza dello schermo.** Il mockup ha proporzioni 940:1200 (circa 1,28); un telefono ha circa 2,1. Sul telefono si vedono quindi spazi vuoti più grandi tra gli elementi rispetto al disegno. Va deciso con la grafica se va bene così, se la cornice deve crescere in altezza o se serve una composizione pensata per il formato telefono.
+- ~~Altezza dello schermo~~ **Deciso (2026-10-29):** sul telefono, più alto del mockup, le dimensioni restano quelle del mockup e a crescere sono solo gli spazi tra gli elementi (soluzione già in uso e approvata). Da rivedere solo in Fase 8 (desktop e rifinitura).
 - Mancano gli SVG dei francobolli pieni (ora placeholder) e quelli di eventuali altri francobolli.
 - Il testo "FOTO/FRASE RANDOM DEL GIORNO" è un segnaposto temporaneo: sparisce in Fase 3.
 - Repository e deploy: il sito pubblicato si aggiorna con il push di questa fase.

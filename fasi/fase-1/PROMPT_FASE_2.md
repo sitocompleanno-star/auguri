@@ -25,7 +25,7 @@ Sto costruendo il sito "minuscole – L'universo delle cose" con Astro (mobile-f
 - Media: solo GitHub (vedi "Gestione dei media" in `ROADMAP.md`).
 - Verifica con `npm run build` e controlla l'aspetto e l'animazione a 390px.
 
-**Da decidere insieme prima di iniziare:** come gestire l'altezza dello schermo (sul telefono il mockup è molto più basso dello schermo: vedi "Problemi aperti" nel report della Fase 1) e dove far scorrere le zampe quando la pagina è alta.
+**Già deciso:** sul telefono, più alto del mockup, le dimensioni restano quelle del mockup e a crescere sono gli spazi tra gli elementi (ogni zampa scende di una quota `k` dello spazio extra, vedi `src/data/home.ts`). Le zampe animate devono rispettare questo posizionamento.
 
 **Da fare a fine fase:** crea `fasi/fase-2/REPORT.md`, `fasi/fase-2/STATO_SITO.md` e `fasi/fase-2/PROMPT_FASE_3.md` (Fase 3: foto e frase del giorno), con lo stesso formato delle fasi precedenti.
 
