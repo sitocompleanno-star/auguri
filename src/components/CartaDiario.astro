@@ -1,0 +1,22 @@
+---
+// Sfondo del Diario (Fase 4): due pezzi di carta antica con scritte, estratti dal mockup Diario.pdf
+// (in alto a destra e in basso a sinistra di ogni pagina da 940 x 1200 punti). Le posizioni sono nella pagina.
+const base = import.meta.env.BASE_URL;
+---
+<div class="carte" aria-hidden="true">
+  <img class="carta carta--destra" src={`${base}grafica/diario-carta-destra.webp`} alt="" width="556" height="481" decoding="async" />
+  <img class="carta carta--sinistra" src={`${base}grafica/diario-carta-sinistra.webp`} alt="" width="647" height="940" decoding="async" />
+</div>
+
+<style>
+  .carte {
+    position: absolute;
+    inset: 0 0 auto;
+    height: calc(1200 * var(--u));
+    pointer-events: none;
+    z-index: 0;
+  }
+  .carta { position: absolute; display: block; }
+  .carta--destra { left: calc(384 * var(--u)); top: 0; width: calc(556 * var(--u)); height: calc(481 * var(--u)); }
+  .carta--sinistra { left: 0; top: calc(260 * var(--u)); width: calc(647 * var(--u)); height: calc(940 * var(--u)); }
+</style>

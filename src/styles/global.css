@@ -19,6 +19,8 @@
   /* Il titolo e "COLLEZIONE DI FRANCOBOLLI" sono SVG: il font serve solo per i testi in HTML */
   --font-titolo: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
   --font-ui: 'Arial', 'Helvetica Neue', Helvetica, sans-serif;
+  /* Diario (Fase 4): nel mockup è un serif "da libro" (tipo Minion); si usano font di sistema simili */
+  --font-diario: 'Minion Pro', 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
 
   --larghezza-foglio: 430px;
 }

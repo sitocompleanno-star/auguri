@@ -1,0 +1,194 @@
+---
+// Riquadro "Come ti senti oggi?" (Fase 4), dal mockup Diario.pdf (pagine 2-6, 940 x 1200 punti).
+// Qui c'è solo il markup di partenza e lo stile: i pulsanti li crea src/lib/flusso.ts nel browser.
+// Misure del mockup: titolo ~50 punti; pillole 300 x 58,3 (fondo #ae9c9d, bordo #864f4f), una sotto l'altra;
+// 100 punti tra la scelta fatta e il livello successivo; francobollo sotto le scelte.
+// Sul telefono le pillole e i testi hanno un minimo in px, così restano leggibili e comode da toccare.
+interface Props {
+  id: string;            // prefisso per gli id (due flussi nella stessa pagina)
+  titolo: string;
+  livelloTitolo?: 2 | 3;
+}
+const { id, titolo, livelloTitolo = 2 } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const Titolo = `h${livelloTitolo}`;
+---
+<div class="flusso" data-flusso id={id}>
+  <Titolo class="flusso__titolo" id={`${id}-titolo`} data-titolo tabindex="-1">{titolo}</Titolo>
+  <slot name="sottotitolo" />
+  <p class="visually-hidden" aria-live="polite" data-annuncio></p>
+
+  <ul class="flusso__scelte" data-scelte aria-label="Scelte fatte" hidden></ul>
+
+  <p class="visually-hidden" id={`${id}-istruzione`} data-istruzione>Scegli come ti senti</p>
+  <ul class="flusso__opzioni" data-opzioni role="group" aria-labelledby={`${id}-istruzione`}></ul>
+
+  <div class="flusso__risultato" data-risultato hidden>
+    <img class="flusso__francobollo" data-francobollo src={`${base}grafica/francobollo-vuoto.svg`} alt="" width="45.44" height="58.1" />
+    <p class="flusso__esito" data-risultato-titolo tabindex="-1">
+      <strong class="flusso__nuovo" data-nuovo hidden>Nuovo francobollo!</strong>
+      <span data-esito></span>
+    </p>
+    <a class="flusso__link" href={`${base}francobolli/`}>Vedi la collezione →</a>
+  </div>
+
+  <div class="flusso__azioni">
+    <button type="button" class="flusso__testo" data-indietro hidden>← indietro</button>
+    <button type="button" class="flusso__testo" data-cambia hidden>Cambia</button>
+    <slot name="azioni" />
+  </div>
+</div>
+
+<style>
+  .flusso {
+    --pill-h: max(36px, calc(58.3 * var(--u)));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: var(--font-diario);
+    color: var(--inchiostro);
+  }
+  .flusso__titolo {
+    margin: 0;
+    font-family: var(--font-diario);
+    font-weight: 400;
+    font-size: max(22px, calc(50 * var(--u)));
+    line-height: 1.15;
+    text-align: center;
+  }
+  .flusso__titolo:focus { outline: none; }
+
+  .flusso__scelte,
+  .flusso__opzioni {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .flusso__scelte[hidden], .flusso__opzioni[hidden] { display: none; }
+  /* titolo → prima riga ~78 punti; le scelte fatte sono separate tra loro e dal livello successivo (passo 100) */
+  .flusso__scelte { margin-top: calc(66 * var(--u)); gap: calc(41.7 * var(--u)); }
+  .flusso__opzioni { margin-top: calc(66 * var(--u)); }
+  .flusso__scelte:not([hidden]) + * + .flusso__opzioni { margin-top: calc(41.7 * var(--u)); }
+
+  /* Pillola (creata dallo script: serve :global perché non ha l'attributo dello stile di Astro) */
+  .flusso :global(.pillola) {
+    display: block;
+    width: max(150px, calc(300 * var(--u)));
+    height: var(--pill-h);
+    padding: 0 0.6em;
+    border: max(1px, calc(0.6 * var(--u))) solid #864f4f;
+    border-radius: 999px;
+    background: #ae9c9d;
+    box-shadow: 0 0 0 max(2px, calc(4 * var(--u))) rgb(174 156 157 / 0.18);
+    color: var(--inchiostro);
+    font-family: var(--font-diario);
+    font-size: max(15px, calc(30 * var(--u)));
+    line-height: 1;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 140ms ease, transform 140ms ease;
+  }
+  .flusso :global(.pillola:hover) { background: #a38f90; }
+  .flusso :global(.pillola:active) { transform: scale(0.97); }
+  /* scelta fatta: bordo più marcato e un'icona "torna" a destra (non solo colore) */
+  .flusso :global(.pillola.is-scelta) {
+    position: relative;
+    border-width: max(1.5px, calc(1 * var(--u)));
+    border-color: #9f5e5d;
+    box-shadow: 0 0 0 max(3px, calc(6 * var(--u))) rgb(174 156 157 / 0.35);
+  }
+  .flusso :global(.pillola.is-scelta::after) {
+    content: '↺';
+    position: absolute;
+    right: 0.8em;
+    top: 50%;
+    transform: translateY(-52%);
+    font-size: 0.8em;
+    opacity: 0.6;
+  }
+  .flusso :global(.pillola:focus-visible) {
+    outline: 3px solid var(--bordeaux);
+    outline-offset: 3px;
+  }
+
+  .flusso__risultato {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: calc(70 * var(--u));
+    text-align: center;
+  }
+  .flusso__risultato[hidden] { display: none; }
+  /* francobollo come nel mockup (~128 x 160 punti, 2,8 volte quello della striscia) */
+  .flusso__francobollo {
+    display: block;
+    width: max(64px, calc(127 * var(--u)));
+    height: auto;
+    filter: drop-shadow(0 3px 4px rgb(34 31 32 / 0.2));
+  }
+  .flusso__esito {
+    min-height: 1.3em;
+    margin: 0.7em 0 0.2em;
+    font-size: max(15px, calc(30 * var(--u)));
+  }
+  .flusso__esito:focus { outline: none; }
+  .flusso__nuovo {
+    display: block;
+    color: var(--bordeaux);
+    font-size: 1.15em;
+    font-style: italic;
+  }
+  .flusso__nuovo[hidden] { display: none; }
+  /* .flusso__testo serve anche ai pulsanti passati nello slot "azioni" dalla pagina: per questo è :global */
+  .flusso__link,
+  .flusso :global(.flusso__testo) {
+    color: var(--bordeaux);
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: max(13px, calc(28 * var(--u)));
+    text-decoration: none;
+  }
+  .flusso__azioni {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4em 1.4em;
+    margin-top: calc(36 * var(--u));
+  }
+  .flusso :global(.flusso__testo) {
+    min-height: 44px;
+    padding: 0 0.4em;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+  .flusso :global(.flusso__testo[hidden]) { display: none; }
+  .flusso__link:focus-visible,
+  .flusso :global(.flusso__testo:focus-visible) {
+    outline: 2px solid var(--bordeaux);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  /* Arrivo del francobollo: cade dall'alto ruotando e si "attacca" (solo transform e opacity) */
+  .flusso__risultato.is-arrivo .flusso__francobollo { animation: attacca 620ms cubic-bezier(0.2, 0.9, 0.3, 1.25) both; }
+  .flusso__risultato.is-arrivo .flusso__esito { animation: compare 400ms 300ms ease-out both; }
+  @keyframes attacca {
+    0% { opacity: 0; transform: translateY(-40%) rotate(-14deg) scale(1.35); }
+    60% { opacity: 1; }
+    100% { opacity: 1; transform: none; }
+  }
+  @keyframes compare {
+    from { opacity: 0; transform: translateY(6px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .flusso__risultato.is-arrivo .flusso__francobollo,
+    .flusso__risultato.is-arrivo .flusso__esito { animation: none; }
+    .flusso :global(.pillola) { transition: none; }
+    .flusso :global(.pillola:active) { transform: none; }
+  }
+</style>

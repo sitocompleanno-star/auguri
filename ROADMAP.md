@@ -34,12 +34,14 @@ Modello dati delle emozioni e dei francobolli, stato salvato in `localStorage`, 
 - Click su "Collezione di francobolli" → `/francobolli/`: portafoglio con le due icone (cuore e Travel, come nel mockup), griglia con francobolli sbloccati e vuoti, scelta dei preferiti.
 **Fatto quando:** uno sblocco di prova compare nella griglia e tra i preferiti in home e persiste al ricaricamento. ✅ (2026-11-11; ruota provvisoria, da confermare)
 
-### Fase 4 · Diario
+### Fase 4 · Diario ✅
 Pagina `/diario/`: flusso "Come ti senti oggi?" a 3 livelli, calendario annuale (anno corrente, con cambio anno), giorni che si colorano, sblocco del francobollo.
-- Si può cambiare l'emozione di un giorno passato; per default non si compilano i giorni futuri (da confermare).
+- Si può cambiare (o cancellare) l'emozione di un giorno passato; i giorni futuri non si compilano.
 - La casella del giorno ha il colore della famiglia e il simbolo/iniziale dell'emozione (non solo il colore).
 - Le date seguono il fuso Europe/Rome.
-**Fatto quando:** si sceglie un'emozione, il giorno si dipinge, il francobollo si sblocca e tutto resta dopo il ricaricamento.
+- L'anno resta fedele al mockup (3 x 4, colore + iniziale); toccando un mese si apre il mese in grande, dove si cambiano i giorni (caselle con numero, simbolo e iniziale).
+- Zampa estesa in alto a sinistra, scorre con la pagina.
+**Fatto quando:** si sceglie un'emozione, il giorno si dipinge, il francobollo si sblocca e tutto resta dopo il ricaricamento. ✅ (2026-11-11)
 
 ### Fase 5 · Cartoline e PDF
 Dentro `/francobolli/`: due cartoline (fiore e mappa, dalle tavole del mockup; predisposto per altre in futuro) a cui si attaccano i francobolli sbloccati, con posizione e rotazione salvate nello stato.
@@ -97,10 +99,15 @@ Decisione: **solo GitHub**, nessun servizio esterno per i file; i video vanno su
 - Cartoline in formato 10 x 15 cm, PDF a due facciate.
 - Foto e frase del giorno rimandate (mancano i contenuti).
 
+## Decisioni prese per il Diario (Fase 4)
+
+- I giorni futuri non si compilano.
+- Settimana da lunedì; ogni mese ha una griglia da 6 righe.
+- Sfondo carta e pomello a fiore estratti dal mockup (`public/grafica/diario-*`): si sostituiscono con file con lo stesso nome.
+
 ## Da decidere
 - Conferma dell'elenco delle emozioni (3 livelli, proposta provvisoria in `src/data/emozioni.ts`) e della palette per famiglia
 - Grafica dei francobolli (placeholder fino ad allora) e delle cartoline definitive
-- Se si possono compilare i giorni futuri (default proposto: no)
 - Se la griglia dei francobolli resta "in ordine di sblocco" (come il mockup) o per famiglia
 - Nome del repository GitHub (influisce sul `base` di Astro)
 - Ordine delle pagine interne (Fase 10)

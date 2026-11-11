@@ -1,0 +1,681 @@
+---
+// Diario (Fase 4), dal mockup Diario.pdf (pagine da 940 x 1200 punti, come la home; 1 punto = var(--u)).
+// Due "schermate" una sotto l'altra, entrambe su carta antica con scritte:
+//  1. "Come ti senti oggi?" (pagine 2-6): pomello a fiore e riquadro grigio con il flusso a 3 livelli.
+//  2. Calendario annuale (pagina 7): anno in grande e 12 mesi in griglia 3 x 4.
+// Toccando un mese si apre una finestra con il mese in grande: lì si tocca un giorno per cambiarne (o
+// cancellarne) l'emozione. Le caselle del calendario annuale sono troppo piccole per il dito (~15px a 390px).
+//
+// Zampa: il mockup del Diario non la mostra. Qui sta in alto a sinistra (sopra la carta, dove nel mockup non
+// c'è nulla), estesa con la scritta "Diario", e scorre con la pagina: non scende più a metà di una pagina lunga.
+import Base from '../../layouts/Base.astro';
+import Zampa from '../../components/Zampa.astro';
+import FlussoEmozioni from '../../components/FlussoEmozioni.astro';
+import CartaDiario from '../../components/CartaDiario.astro';
+import { zampe, zampaVisibile } from '../../data/home';
+import { controllaRuota, francobolliDefinitivi } from '../../lib/francobolli-definitivi.ts';
+import { MESI, GIORNI, GIORNI_BREVI, caselleMese } from '../../lib/calendario.ts';
+import { dataDiOggi } from '../../lib/stato.ts';
+
+controllaRuota();
+const base = import.meta.env.BASE_URL;
+const zampa = zampe.find((z) => z.slug === 'diario')!;
+const definitivi = JSON.stringify(francobolliDefinitivi());
+// Anno del build: solo per non avere una pagina vuota prima dello script, che ridisegna con la data vera.
+const anno = Number(dataDiOggi().slice(0, 4));
+---
+<Base titolo="Diario · minuscole">
+  <main class="diario" data-diario data-base={base} data-definitivi={definitivi}>
+    <h1 class="visually-hidden">Diario</h1>
+
+    <!-- 1 · Come ti senti oggi? -->
+    <section class="diario__oggi" aria-labelledby="oggi-titolo">
+      <CartaDiario />
+      <Zampa {...zampa} top={24} k={0} href={base} visibile={zampaVisibile} estesa />
+
+      <img class="diario__fiore" src={`${base}grafica/diario-fiore.svg`} alt="" width="135" height="163" />
+      <div class="diario__riquadro">
+        <FlussoEmozioni id="oggi" titolo="Come ti senti oggi?">
+          <p class="diario__data" slot="sottotitolo" data-oggi-testo></p>
+        </FlussoEmozioni>
+      </div>
+      <p class="diario__avviso" data-avviso hidden>
+        Questo browser non permette di salvare: le scelte valgono solo finché la pagina resta aperta.
+      </p>
+    </section>
+
+    <!-- 2 · Calendario annuale -->
+    <section class="diario__anno" aria-labelledby="anno-titolo">
+      <CartaDiario />
+
+      <div class="anno__testa">
+        <button type="button" class="anno__freccia" data-anno-prec aria-label="Anno precedente">‹</button>
+        <h2 class="anno__titolo" id="anno-titolo" aria-live="polite"><span class="visually-hidden">Calendario </span><span data-anno>{anno}</span></h2>
+        <button type="button" class="anno__freccia" data-anno-succ aria-label="Anno successivo">›</button>
+      </div>
+
+      <div class="anno__riquadro">
+        <ol class="anno__mesi">
+          {MESI.map((nome, i) => (
+            <li>
+              <button type="button" class="mese" data-mese={i + 1}>
+                <span class="mese__nome" aria-hidden="true">{nome.toUpperCase()}</span>
+                <span class="mese__griglia" aria-hidden="true">
+                  {caselleMese(anno, i + 1).map((d) => <span class:list={['mc', { 'mc--fuori': !d }]}></span>)}
+                </span>
+                <span class="visually-hidden" data-mese-desc>{nome} {anno}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <p class="anno__nota">Tocca un mese per vedere i giorni e cambiarli.</p>
+      <p class="anno__nota"><a class="diario__indietro" href={base} data-zampa="chiudi">← torna alla home</a></p>
+    </section>
+
+    <!-- Finestra: un mese in grande, poi il flusso per il giorno scelto -->
+    <dialog class="finestra" data-finestra aria-labelledby="mese-titolo">
+      <form method="dialog" class="finestra__chiudi-form">
+        <button class="finestra__chiudi" aria-label="Chiudi">×</button>
+      </form>
+
+      <div class="vista-mese" data-vista-mese>
+        <div class="mm__testa">
+          <button type="button" class="anno__freccia" data-mese-prec aria-label="Mese precedente">‹</button>
+          <h2 class="mm__titolo" id="mese-titolo" data-mese-titolo tabindex="-1"></h2>
+          <button type="button" class="anno__freccia" data-mese-succ aria-label="Mese successivo">›</button>
+        </div>
+        <div class="mm__griglia" role="grid" aria-labelledby="mese-titolo" aria-describedby="mese-aiuto" data-griglia>
+          <div role="row" class="mm__riga">
+            {GIORNI_BREVI.map((g, i) => <span role="columnheader" class="mm__intestazione"><abbr title={GIORNI[i]}>{g}</abbr></span>)}
+          </div>
+          {Array.from({ length: 6 }, () => (
+            <div role="row" class="mm__riga">
+              {Array.from({ length: 7 }, () => (
+                <span role="gridcell" class="mm__cella"><button type="button" class="giorno" tabindex="-1" hidden></button></span>
+              ))}
+            </div>
+          ))}
+        </div>
+        <p class="mm__aiuto" id="mese-aiuto">Tocca un giorno passato per scegliere o cambiare l’emozione. Con la tastiera: frecce per muoversi, Pagina su/giù per cambiare mese.</p>
+        <p class="visually-hidden" aria-live="polite" data-mese-annuncio></p>
+      </div>
+
+      <div class="vista-giorno" data-vista-giorno hidden>
+        <FlussoEmozioni id="giorno" titolo="Come ti sentivi?">
+          <button type="button" class="flusso__testo diario__cancella" slot="azioni" data-cancella hidden>Cancella questo giorno</button>
+          <button type="button" class="flusso__testo" slot="azioni" data-torna-mese>← torna al mese</button>
+        </FlussoEmozioni>
+      </div>
+    </dialog>
+  </main>
+</Base>
+
+<script>
+  import { aggiorna, dataDiOggi, impostaGiorno, leggi, osserva, persistente, sbloccati, type Stato } from '../../lib/stato.ts';
+  import { emozione } from '../../data/emozioni.ts';
+  import { simboli } from '../../data/simboli.ts';
+  import { Flusso } from '../../lib/flusso.ts';
+  import {
+    GIORNI, MESI, aggiungiGiorni, aggiungiMesi, caselleMese, data, dataLeggibile, giornoSettimana, maiuscola, parti,
+  } from '../../lib/calendario.ts';
+
+  const radice = document.querySelector<HTMLElement>('[data-diario]')!;
+  const base = radice.dataset.base ?? '/';
+  const definitivi = new Set<string>(JSON.parse(radice.dataset.definitivi ?? '[]'));
+  const $ = <T extends HTMLElement = HTMLElement>(sel: string, el: ParentNode = document) => el.querySelector<T>(sel)!;
+
+  let stato: Stato = leggi();
+  let oggi = dataDiOggi();
+  const annoDi = (d: string) => Number(d.slice(0, 4));
+  const meseDi = (d: string) => d.slice(0, 7); // "AAAA-MM": si confronta come stringa
+  const emozioneDel = (d: string) => {
+    const id = stato.giorni[d]?.emozione;
+    return id ? emozione(id) : undefined;
+  };
+
+  /** Salva l'emozione di un giorno e dice se il francobollo è nuovo (mai sbloccato prima). */
+  function salvaGiorno(d: string, id: string) {
+    const prima = sbloccati(leggi());
+    stato = aggiorna((s) => impostaGiorno(s, d, id));
+    return { nuovo: !prima.has(id) };
+  }
+
+  // ---------------------------------------------------------------------------------------------------------
+  // 1 · Come ti senti oggi?
+  // ---------------------------------------------------------------------------------------------------------
+  const flussoOggi = new Flusso({
+    radice: $('#oggi'), base, definitivi,
+    salva: (id) => salvaGiorno(dataDiOggi(), id),
+  });
+
+  function disegnaOggi() {
+    $('[data-oggi-testo]').textContent = `${maiuscola(GIORNI[giornoSettimana(oggi)])} ${dataLeggibile(oggi)}`;
+    const id = stato.giorni[oggi]?.emozione ?? null;
+    if (!flussoOggi.occupato && flussoOggi.attuale !== id) flussoOggi.imposta(id);
+    $('[data-avviso]').hidden = persistente();
+  }
+
+  // ---------------------------------------------------------------------------------------------------------
+  // 2 · Calendario annuale
+  // ---------------------------------------------------------------------------------------------------------
+  let annoVisto = annoDi(oggi);
+  const annoMinimo = () => Math.min(annoDi(oggi) - 5, ...Object.keys(stato.giorni).map(annoDi));
+  const bottoniMese = [...document.querySelectorAll<HTMLButtonElement>('[data-mese]')];
+
+  function disegnaAnno() {
+    $('[data-anno]').textContent = String(annoVisto);
+    $<HTMLButtonElement>('[data-anno-prec]').disabled = annoVisto <= annoMinimo();
+    $<HTMLButtonElement>('[data-anno-succ]').disabled = annoVisto >= annoDi(oggi);
+    bottoniMese.forEach((b, i) => {
+      const mese = i + 1;
+      const caselle = caselleMese(annoVisto, mese);
+      const celle = b.querySelectorAll<HTMLElement>('.mc');
+      let compilati = 0;
+      caselle.forEach((d, j) => {
+        const c = celle[j];
+        const e = d ? emozioneDel(d) : undefined;
+        if (e) compilati++;
+        c.className = 'mc';
+        if (!d) c.classList.add('mc--fuori');
+        if (e) c.classList.add('mc--piena');
+        if (d === oggi) c.classList.add('mc--oggi');
+        if (d && d > oggi) c.classList.add('mc--futuro');
+        c.textContent = e ? e.iniziale : '';
+        c.style.setProperty('--sf', e ? e.sfumatura : '');
+      });
+      const contiene = meseDi(oggi) === `${annoVisto}-${String(mese).padStart(2, '0')}`;
+      $('[data-mese-desc]', b).textContent =
+        `${maiuscola(MESI[i])} ${annoVisto}: ` +
+        (compilati === 0 ? 'nessun giorno compilato' : compilati === 1 ? '1 giorno compilato' : `${compilati} giorni compilati`) +
+        (contiene ? ', c’è oggi' : '');
+      b.classList.toggle('is-corrente', contiene);
+    });
+  }
+
+  $('[data-anno-prec]').addEventListener('click', () => { annoVisto--; disegnaAnno(); });
+  $('[data-anno-succ]').addEventListener('click', () => { annoVisto++; disegnaAnno(); });
+
+  // ---------------------------------------------------------------------------------------------------------
+  // Finestra: mese in grande (griglia navigabile con la tastiera) e flusso del giorno
+  // ---------------------------------------------------------------------------------------------------------
+  const finestra = $<HTMLDialogElement>('[data-finestra]');
+  const vistaMese = $('[data-vista-mese]');
+  const vistaGiorno = $('[data-vista-giorno]');
+  const giorniBtn = [...finestra.querySelectorAll<HTMLButtonElement>('.giorno')];
+  let attivo = oggi;              // giorno con il focus nella griglia (tabindex 0)
+  let giornoAperto: string | null = null;
+
+  const primoMese = () => data(annoMinimo(), 1, 1);
+  /** Tiene una data tra il primo mese consentito e la fine del mese di oggi. */
+  function limita(d: string): string {
+    const min = primoMese();
+    const max = aggiungiMesi(oggi.slice(0, 8) + '01', 1); // primo giorno del mese prossimo
+    if (d < min) return min;
+    if (d >= max) return aggiungiGiorni(max, -1);
+    return d;
+  }
+
+  function disegnaMese(focus = false) {
+    const { anno, mese } = parti(attivo);
+    $('[data-mese-titolo]').textContent = `${maiuscola(MESI[mese - 1])} ${anno}`;
+    $<HTMLButtonElement>('[data-mese-prec]').disabled = meseDi(attivo) <= meseDi(primoMese());
+    $<HTMLButtonElement>('[data-mese-succ]').disabled = meseDi(attivo) >= meseDi(oggi);
+    caselleMese(anno, mese).forEach((d, i) => {
+      const b = giorniBtn[i];
+      b.hidden = !d;
+      b.closest('[role="gridcell"]')!.toggleAttribute('aria-hidden', !d);
+      if (!d) { delete b.dataset.data; b.replaceChildren(); return; }
+      const e = emozioneDel(d);
+      const futuro = d > oggi;
+      b.dataset.data = d;
+      b.tabIndex = d === attivo ? 0 : -1;
+      b.classList.toggle('is-piena', !!e);
+      b.classList.toggle('is-oggi', d === oggi);
+      b.classList.toggle('is-futuro', futuro);
+      b.setAttribute('aria-disabled', String(futuro));
+      if (d === oggi) b.setAttribute('aria-current', 'date'); else b.removeAttribute('aria-current');
+      b.style.setProperty('--sf', e ? e.sfumatura : '');
+      b.style.setProperty('--col', e ? e.colore : '');
+      b.setAttribute('aria-label',
+        `${dataLeggibile(d)}: ${e ? e.nome : futuro ? 'non ancora' : 'nessuna emozione'}${d === oggi ? ', oggi' : ''}`);
+      b.innerHTML =
+        `<span class="giorno__num">${parti(d).giorno}</span>` +
+        (e ? `<svg class="giorno__simbolo" viewBox="-9 -9 18 18" aria-hidden="true">${simboli[e.simbolo]}</svg>` +
+             `<span class="giorno__iniziale">${e.iniziale}</span>` : '');
+    });
+    if (focus) giorniBtn.find((b) => b.dataset.data === attivo)?.focus();
+  }
+
+  function vaiA(d: string) {
+    attivo = limita(d);
+    disegnaMese(true);
+  }
+
+  function apriMese(anno: number, mese: number) {
+    const inizio = data(anno, mese, 1);
+    attivo = meseDi(inizio) === meseDi(oggi) ? oggi : limita(inizio);
+    mostraVista('mese');
+    disegnaMese();
+    finestra.showModal();
+    giorniBtn.find((b) => b.dataset.data === attivo)?.focus();
+  }
+
+  function mostraVista(v: 'mese' | 'giorno') {
+    vistaMese.hidden = v !== 'mese';
+    vistaGiorno.hidden = v !== 'giorno';
+    finestra.setAttribute('aria-labelledby', v === 'mese' ? 'mese-titolo' : 'giorno-titolo');
+  }
+
+  const flussoGiorno = new Flusso({
+    radice: $('#giorno'), base, definitivi,
+    salva: (id) => {
+      const r = salvaGiorno(giornoAperto!, id);
+      $('[data-cancella]').hidden = false;
+      return r;
+    },
+  });
+
+  function apriGiorno(d: string) {
+    giornoAperto = d;
+    attivo = d;
+    $('#giorno-titolo').textContent = d === oggi ? 'Come ti senti oggi?' : `Come ti sentivi il ${dataLeggibile(d)}?`;
+    flussoGiorno.imposta(stato.giorni[d]?.emozione ?? null);
+    $('[data-cancella]').hidden = !stato.giorni[d]?.emozione;
+    mostraVista('giorno');
+    $('#giorno-titolo').focus();
+  }
+
+  function tornaAlMese(messaggio = '') {
+    giornoAperto = null;
+    mostraVista('mese');
+    disegnaMese(true);
+    $('[data-mese-annuncio]').textContent = messaggio;
+  }
+
+  $('[data-torna-mese]').addEventListener('click', () => tornaAlMese());
+  $('[data-cancella]').addEventListener('click', () => {
+    const d = giornoAperto!;
+    stato = aggiorna((s) => impostaGiorno(s, d, null));
+    tornaAlMese(`${dataLeggibile(d)}: cancellato.`);
+  });
+
+  $('[data-mese-prec]').addEventListener('click', () => { attivo = limita(aggiungiMesi(attivo, -1)); disegnaMese(); });
+  $('[data-mese-succ]').addEventListener('click', () => { attivo = limita(aggiungiMesi(attivo, 1)); disegnaMese(); });
+
+  const griglia = $('[data-griglia]');
+  griglia.addEventListener('click', (ev) => {
+    const b = (ev.target as Element).closest<HTMLButtonElement>('.giorno');
+    if (!b?.dataset.data) return;
+    if (b.dataset.data > oggi) {
+      $('[data-mese-annuncio]').textContent = 'I giorni futuri non si possono ancora compilare.';
+      b.classList.remove('is-no'); void b.offsetWidth; b.classList.add('is-no');
+      return;
+    }
+    apriGiorno(b.dataset.data);
+  });
+  griglia.addEventListener('keydown', (ev) => {
+    const b = (ev.target as Element).closest<HTMLButtonElement>('.giorno');
+    if (!b?.dataset.data) return;
+    const d = b.dataset.data;
+    const sett = giornoSettimana(d);
+    const mosse: Record<string, () => string> = {
+      ArrowLeft: () => aggiungiGiorni(d, -1),
+      ArrowRight: () => aggiungiGiorni(d, 1),
+      ArrowUp: () => aggiungiGiorni(d, -7),
+      ArrowDown: () => aggiungiGiorni(d, 7),
+      Home: () => aggiungiGiorni(d, -sett),
+      End: () => aggiungiGiorni(d, 6 - sett),
+      PageUp: () => aggiungiMesi(d, ev.shiftKey ? -12 : -1),
+      PageDown: () => aggiungiMesi(d, ev.shiftKey ? 12 : 1),
+    };
+    const f = mosse[ev.key];
+    if (!f) return;
+    ev.preventDefault();
+    vaiA(f());
+  });
+
+  bottoniMese.forEach((b, i) => b.addEventListener('click', () => apriMese(annoVisto, i + 1)));
+
+  finestra.addEventListener('click', (ev) => { if (ev.target === finestra) finestra.close(); });
+  finestra.addEventListener('close', () => {
+    // il focus torna al mese da cui si era partiti (o a quello in cui si è arrivati)
+    const { anno, mese } = parti(attivo);
+    if (anno !== annoVisto) { annoVisto = anno; disegnaAnno(); }
+    giornoAperto = null;
+    bottoniMese[mese - 1].focus();
+  });
+
+  // ---------------------------------------------------------------------------------------------------------
+  // Tutto si ridisegna quando cambia lo stato (anche da un'altra scheda) e quando cambia il giorno
+  // ---------------------------------------------------------------------------------------------------------
+  function disegna(s: Stato) {
+    stato = s;
+    disegnaOggi();
+    disegnaAnno();
+    if (finestra.open && !vistaMese.hidden) disegnaMese();
+  }
+  osserva(disegna);
+
+  // Mezzanotte (fuso Europe/Rome) con la pagina aperta: "oggi" cambia
+  function controllaGiorno() {
+    const ora = dataDiOggi();
+    if (ora === oggi) return;
+    const eraAnnoCorrente = annoVisto === annoDi(oggi);
+    oggi = ora;
+    if (eraAnnoCorrente) annoVisto = annoDi(oggi);
+    if (!flussoOggi.occupato) flussoOggi.imposta(stato.giorni[oggi]?.emozione ?? null);
+    disegna(leggi());
+  }
+  window.setInterval(controllaGiorno, 60_000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) controllaGiorno(); });
+</script>
+
+<style>
+  .diario {
+    position: relative;
+    background: #efebeb;
+    font-family: var(--font-diario);
+  }
+
+  /* 1 · Oggi: pomello a y 164-327, riquadro 700 x 700 da y 301 (il pomello lo copre di 26 punti) */
+  .diario__oggi {
+    position: relative;
+    min-height: calc(1200 * var(--u));
+    padding: calc(164 * var(--u)) 0 calc(120 * var(--u));
+  }
+  .diario__fiore {
+    position: relative;
+    z-index: 2;
+    display: block;
+    width: calc(135 * var(--u));
+    height: calc(163 * var(--u));
+    margin: 0 auto calc(-26 * var(--u));
+  }
+  .diario__riquadro {
+    position: relative;
+    z-index: 1;
+    min-height: calc(699 * var(--u));
+    margin: 0 calc(120 * var(--u));
+    padding: calc(56 * var(--u)) calc(24 * var(--u)) calc(56 * var(--u));
+    border-radius: calc(20 * var(--u));
+    background: rgb(175 156 157 / 0.2);
+  }
+  .diario__data {
+    margin: 0.3em 0 0;
+    font-family: var(--font-ui);
+    font-size: max(12px, calc(24 * var(--u)));
+    color: var(--grigio-testo);
+    text-align: center;
+  }
+  .diario__avviso {
+    position: relative;
+    z-index: 1;
+    margin: 1em calc(120 * var(--u)) 0;
+    padding: 0.5em 0.7em;
+    border-radius: 8px;
+    background: var(--rosa-chiaro);
+    color: var(--bordeaux);
+    font-family: var(--font-ui);
+    font-size: 13px;
+  }
+
+  /* 2 · Calendario (pagina 7): anno al centro (~97 punti), riquadro da x 36 a 904; mesi 249 x (43,4 + 6 righe da
+     34,88), colonne a x 58, 347, 636 (spazio 39,9) */
+  .diario__anno {
+    position: relative;
+    min-height: calc(1200 * var(--u));
+    padding: calc(20 * var(--u)) 0 calc(90 * var(--u));
+  }
+  .anno__testa,
+  .mm__testa {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(30 * var(--u));
+  }
+  .anno__titolo {
+    margin: 0;
+    min-width: 3.2ch;
+    font-family: var(--font-diario);
+    font-weight: 400;
+    font-size: max(40px, calc(97 * var(--u)));
+    line-height: 1.1;
+    text-align: center;
+    color: var(--inchiostro);
+  }
+  .anno__freccia {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: rgb(175 156 157 / 0.25);
+    color: var(--bordeaux);
+    font-family: var(--font-ui);
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .anno__freccia:disabled { opacity: 0.3; cursor: default; }
+
+  .anno__riquadro {
+    position: relative;
+    z-index: 1;
+    margin: calc(14 * var(--u)) calc(36 * var(--u)) 0;
+    padding: calc(22 * var(--u));
+    border-radius: calc(20 * var(--u));
+    background: rgb(175 156 157 / 0.2);
+  }
+  .anno__mesi {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: calc(38.4 * var(--u)) calc(39.9 * var(--u));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .mese {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--inchiostro);
+    font: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mese__nome {
+    display: block;
+    height: calc(43.4 * var(--u));
+    background: #ae9c9d;
+    font-size: max(10px, calc(25 * var(--u)));
+    line-height: calc(43.4 * var(--u));
+    letter-spacing: 0.02em;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .mese.is-corrente .mese__nome { background: #9d8586; }
+  .mese__griglia {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-left: max(0.5px, calc(0.9 * var(--u))) solid #864f4f;
+    border-top: max(0.5px, calc(0.9 * var(--u))) solid #864f4f;
+  }
+  .mese__griglia :global(.mc) {
+    display: block;
+    height: calc(34.88 * var(--u));
+    border-right: max(0.5px, calc(0.9 * var(--u))) solid #864f4f;
+    border-bottom: max(0.5px, calc(0.9 * var(--u))) solid #864f4f;
+    background: #ae9c9d;
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: max(8px, calc(21 * var(--u)));
+    line-height: calc(33 * var(--u));
+    text-align: center;
+    color: var(--inchiostro);
+  }
+  .mese__griglia :global(.mc--fuori) { background: rgb(174 156 157 / 0.35); }
+  .mese__griglia :global(.mc--piena) { background: var(--sf); }
+  .mese__griglia :global(.mc--oggi) { box-shadow: inset 0 0 0 max(1.5px, calc(3 * var(--u))) var(--bordeaux); }
+  .mese__griglia :global(.mc--futuro) { background: #b9a9aa; }
+  .mese:focus-visible { outline: 3px solid var(--bordeaux); outline-offset: 3px; }
+  @media (hover: hover) { .mese:hover .mese__nome { background: #9d8586; } }
+
+  .anno__nota {
+    position: relative;
+    z-index: 1;
+    margin: 1em calc(36 * var(--u)) 0;
+    font-family: var(--font-ui);
+    font-size: max(12px, calc(26 * var(--u)));
+    color: var(--grigio-testo);
+    text-align: center;
+  }
+  .diario__indietro {
+    color: var(--bordeaux);
+    font-weight: 700;
+    font-size: max(13px, calc(30 * var(--u)));
+    text-decoration: none;
+  }
+  .diario a:focus-visible,
+  .anno__freccia:focus-visible {
+    outline: 3px solid var(--bordeaux);
+    outline-offset: 3px;
+  }
+
+  /* Finestra con il mese in grande */
+  .finestra {
+    width: min(94vw, 400px);
+    max-height: 92dvh;
+    padding: 18px 14px 16px;
+    border: 0;
+    border-radius: 18px;
+    background: #f4f0f0;
+    color: var(--inchiostro);
+    font-family: var(--font-diario);
+    box-shadow: 0 12px 40px rgb(34 31 32 / 0.25);
+  }
+  .finestra[open] { animation: entra 220ms ease-out; }
+  .finestra::backdrop { background: rgb(34 31 32 / 0.45); }
+  @keyframes entra {
+    from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  }
+  .finestra__chiudi-form { position: absolute; top: 4px; right: 6px; z-index: 2; }
+  .finestra__chiudi {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background: none;
+    font-size: 28px;
+    line-height: 1;
+    color: var(--grigio-testo);
+    cursor: pointer;
+  }
+  .finestra :focus-visible { outline: 3px solid var(--bordeaux); outline-offset: 2px; }
+  .vista-mese[hidden], .vista-giorno[hidden] { display: none; }
+  .vista-giorno { padding-top: 26px; }
+
+  .mm__testa { gap: 6px; margin: 0 34px 10px; }
+  .mm__titolo {
+    flex: 1;
+    margin: 0;
+    font-weight: 400;
+    font-size: 21px;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .mm__titolo:focus { outline: none; }
+  .mm__griglia {
+    display: grid;
+    gap: 3px;
+  }
+  .mm__riga {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+  }
+  .mm__intestazione {
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    color: var(--grigio-testo);
+  }
+  .mm__intestazione abbr { text-decoration: none; }
+  .mm__cella { display: block; aspect-ratio: 1 / 1.08; }
+  .giorno {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 1px solid #864f4f;
+    border-radius: 6px;
+    background: #ae9c9d;
+    color: var(--inchiostro);
+    font-family: var(--font-ui);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .giorno[hidden] { display: none; }
+  .giorno.is-piena { background: var(--sf); }
+  .giorno.is-futuro { background: #e2dbdc; border-color: #c9b9b9; color: #8c8687; cursor: default; }
+  .giorno.is-oggi { box-shadow: inset 0 0 0 3px var(--bordeaux); }
+  .giorno.is-oggi::before {
+    content: 'oggi';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 2px;
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--bordeaux);
+  }
+  .giorno.is-oggi.is-piena::before { display: none; }
+  .giorno:focus-visible { outline: 3px solid var(--bordeaux); outline-offset: 2px; z-index: 1; }
+  .giorno:not(.is-futuro):active { transform: scale(0.95); }
+  .giorno.is-no { animation: no 300ms ease; }
+  @keyframes no {
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
+  }
+  .giorno :global(.giorno__num) {
+    position: absolute;
+    top: 3px;
+    left: 4px;
+    font-size: 11px;
+    line-height: 1;
+  }
+  .giorno :global(.giorno__simbolo) {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 12px;
+    height: 12px;
+    color: var(--col);
+  }
+  .giorno :global(.giorno__iniziale) {
+    position: absolute;
+    inset: auto 0 3px;
+    font-family: Georgia, serif;
+    font-weight: 700;
+    font-size: 19px;
+    line-height: 1;
+    text-align: center;
+  }
+  .mm__aiuto {
+    margin: 10px 2px 0;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    color: var(--grigio-testo);
+  }
+  .diario__cancella { color: var(--rosso) !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .finestra[open], .giorno.is-no { animation: none; }
+    .giorno:not(.is-futuro):active { transform: none; }
+  }
+</style>
