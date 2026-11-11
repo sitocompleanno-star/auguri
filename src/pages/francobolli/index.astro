@@ -1,0 +1,471 @@
+---
+// Pagina Francobolli (Fase 3), dalla tavola 4 di Francobolli_e_luna_park.pdf (940 x 1200 punti, come la home):
+// sfondo caldo sfumato, portafoglio con due icone (busta con cuore = cartolina fiore, cartellina TRAVEL =
+// cartolina mappa; le cartoline vere arrivano in Fase 5) e, in basso, la fascia "FRANCOBOLLI" con gli slot
+// (16 per riga, stessa misura della striscia in home). I francobolli sbloccati riempiono gli slot in ordine di
+// sblocco; un tocco apre il dettaglio, dove si sceglie se metterlo tra i preferiti della home.
+// Lo stato vive in localStorage: al build tutti gli slot sono vuoti e lo script li riempie nel browser.
+import Base from '../../layouts/Base.astro';
+import { famiglie, emozioni } from '../../data/emozioni.ts';
+import { controllaRuota, francobolliDefinitivi, graficaOSegnaposto } from '../../lib/francobolli-definitivi.ts';
+import { FRANCOBOLLO_VUOTO } from '../../lib/francobolli.ts';
+import { MAX_PREFERITI } from '../../lib/stato.ts';
+
+controllaRuota();
+const base = import.meta.env.BASE_URL;
+const definitivi = JSON.stringify(francobolliDefinitivi());
+const totale = emozioni.length;
+const dev = import.meta.env.DEV;
+const busta = graficaOSegnaposto('portafoglio-busta.svg');
+const travel = graficaOSegnaposto('portafoglio-travel.svg');
+---
+<Base titolo="Collezione di francobolli · minuscole">
+  <main class="fb" data-francobolli data-base={base} data-definitivi={definitivi}>
+    <a class="fb__indietro" href={base}>← torna alla home</a>
+    <h1 class="visually-hidden">Collezione di francobolli</h1>
+
+    <!-- Portafoglio: le cartoline vere arrivano in Fase 5 -->
+    <section class="fb__portafoglio" aria-labelledby="titolo-portafoglio">
+      <h2 id="titolo-portafoglio" class="visually-hidden">Portafoglio delle cartoline</h2>
+      <div class="fb__icone">
+        <button type="button" class="fb__icona" data-cartolina="La cartolina con il fiore">
+          <img src={`${base}${busta}`} alt="" width="351" height="265" />
+          <span class="visually-hidden">Cartolina con il fiore (in arrivo)</span>
+        </button>
+        <button type="button" class="fb__icona" data-cartolina="La cartolina con la mappa">
+          <img src={`${base}${travel}`} alt="" width="351" height="265" />
+          <span class="visually-hidden">Cartolina con la mappa (in arrivo)</span>
+        </button>
+      </div>
+      <p class="fb__messaggio" data-messaggio role="status"></p>
+    </section>
+
+    <section class="fb__fascia" aria-labelledby="titolo-francobolli">
+      <h2 id="titolo-francobolli" class="fb__titolo">FRANCOBOLLI</h2>
+      <p class="visually-hidden" data-riassunto aria-live="polite">Nessun francobollo sbloccato su {totale}.</p>
+      <ul class="fb__griglia">
+        {emozioni.map(() => (
+          <li aria-hidden="true">
+            <button type="button" class="fb__francobollo" disabled>
+              <img src={`${base}${FRANCOBOLLO_VUOTO}`} alt="" width="45.44" height="58.1" />
+              <svg class="fb__cuore" viewBox="0 0 20 18" aria-hidden="true">
+                <path d="M10 17C3 12 1 8.5 1 5.5 1 2.8 3.1 1 5.4 1 7.3 1 8.9 2.1 10 3.8 11.1 2.1 12.7 1 14.6 1 16.9 1 19 2.8 19 5.5 19 8.5 17 12 10 17Z" />
+              </svg>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p class="fb__info">
+        <span><strong data-conta>0</strong> di {totale}</span>
+        <span><svg class="fb__cuore-testo" viewBox="0 0 20 18" aria-hidden="true"><path d="M10 17C3 12 1 8.5 1 5.5 1 2.8 3.1 1 5.4 1 7.3 1 8.9 2.1 10 3.8 11.1 2.1 12.7 1 14.6 1 16.9 1 19 2.8 19 5.5 19 8.5 17 12 10 17Z" /></svg>
+          <strong data-num-preferiti>0</strong>/{MAX_PREFERITI} nella home</span>
+      </p>
+      <p class="fb__nota">Tocca un francobollo per vederlo e sceglierlo per la home.</p>
+      <p class="fb__avviso" data-avviso hidden>
+        Questo browser non permette di salvare: le scelte valgono solo finché la pagina resta aperta.
+      </p>
+
+      {dev && (
+        <section class="fb__prova" data-prova aria-labelledby="titolo-prova">
+          <h2 id="titolo-prova">Prova (solo con npm run dev)</h2>
+          <p>Simula il Diario: assegna un'emozione a un giorno. Non compare nel sito pubblicato.</p>
+          <label>Emozione
+            <select data-prova-emozione>
+              {famiglie.map((f) => (
+                <optgroup label={f.nome}>
+                  {f.emozioni.flatMap((m) => m.emozioni).map((e) => <option value={e.id}>{e.nome}</option>)}
+                </optgroup>
+              ))}
+            </select>
+          </label>
+          <label>Giorno <input type="date" data-prova-data /></label>
+          <div class="fb__prova-bottoni">
+            <button type="button" class="fb__bottone" data-prova-sblocca>Sblocca</button>
+            <button type="button" class="fb__bottone" data-prova-caso>5 a caso</button>
+            <button type="button" class="fb__bottone fb__bottone--secondario" data-prova-azzera>Azzera tutto</button>
+          </div>
+        </section>
+      )}
+    </section>
+
+    <dialog class="dettaglio" data-dettaglio aria-labelledby="dettaglio-nome">
+      <form method="dialog">
+        <button class="dettaglio__chiudi" aria-label="Chiudi">×</button>
+      </form>
+      <img class="dettaglio__img" data-d-img src={`${base}${FRANCOBOLLO_VUOTO}`} alt="" width="45.44" height="58.1" />
+      <h2 id="dettaglio-nome" class="dettaglio__nome" data-d-nome></h2>
+      <p class="dettaglio__percorso" data-d-percorso></p>
+      <p class="dettaglio__info" data-d-info></p>
+      <button type="button" class="fb__bottone" data-d-preferito></button>
+      <p class="dettaglio__msg" data-d-msg role="status"></p>
+    </dialog>
+  </main>
+</Base>
+
+<script>
+  import {
+    MAX_PREFERITI, aggiorna, alternaPreferito, conteggi, dataDiOggi, impostaGiorno, leggi, osserva,
+    persistente, preferitiValidi, sbloccati, scrivi, statoVuoto, type Stato,
+  } from '../../lib/stato.ts';
+  import { emozione, emozioni, famiglia, intermedia } from '../../data/emozioni.ts';
+  import { FRANCOBOLLO_VUOTO, percorsoFrancobollo } from '../../lib/francobolli.ts';
+
+  const radice = document.querySelector<HTMLElement>('[data-francobolli]')!;
+  const base = radice.dataset.base ?? '/';
+  const definitivi = new Set<string>(JSON.parse(radice.dataset.definitivi ?? '[]'));
+  const $ = <T extends Element = HTMLElement>(sel: string, el: ParentNode = document) => el.querySelector<T>(sel)!;
+
+  // "1º novembre 2026", "12 novembre 2026"
+  const dataLunga = (d: string) =>
+    new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+      .format(new Date(`${d}T12:00:00Z`))
+      .replace(/^1 /, '1º ');
+
+  // ---- Portafoglio: per ora solo un messaggio "in arrivo" (cartoline in Fase 5) ----
+  const messaggio = $('[data-messaggio]');
+  let timer = 0;
+  for (const b of document.querySelectorAll<HTMLButtonElement>('[data-cartolina]')) {
+    b.addEventListener('click', () => {
+      messaggio.textContent = `${b.dataset.cartolina} è in arrivo!`;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => (messaggio.textContent = ''), 3500);
+    });
+  }
+
+  // ---- Griglia: slot riempiti in ordine di sblocco ----
+  const bottoni = [...document.querySelectorAll<HTMLButtonElement>('.fb__francobollo')];
+  let attuale: Stato = statoVuoto();
+
+  function disegna(s: Stato) {
+    attuale = s;
+    const ok = sbloccati(s);
+    // solo emozioni che esistono nella ruota (se la ruota cambia, i giorni vecchi restano nello stato)
+    const ids = [...ok.keys()].filter((id) => emozione(id)).slice(0, bottoni.length);
+    const pref = new Set(preferitiValidi(s));
+    bottoni.forEach((b, i) => {
+      const e = ids[i] ? emozione(ids[i]) : undefined;
+      const img = b.querySelector('img')!;
+      const src = base + (e ? percorsoFrancobollo(e, definitivi) : FRANCOBOLLO_VUOTO);
+      if (img.getAttribute('src') !== src) img.setAttribute('src', src);
+      b.disabled = !e;
+      b.closest('li')!.toggleAttribute('aria-hidden', !e); // gli slot vuoti non si leggono uno per uno
+      if (e) {
+        b.dataset.id = e.id;
+        b.setAttribute('aria-label', `${e.nome}${pref.has(e.id) ? ', nella home' : ''}`);
+      } else {
+        delete b.dataset.id;
+        b.removeAttribute('aria-label');
+      }
+      b.classList.toggle('is-preferito', !!e && pref.has(e.id));
+    });
+    const n = ids.length;
+    $('[data-conta]').textContent = String(n);
+    $('[data-num-preferiti]').textContent = String(pref.size);
+    $('[data-riassunto]').textContent =
+      n === 0 ? `Nessun francobollo sbloccato su ${emozioni.length}.`
+        : `${n} francobolli sbloccati su ${emozioni.length}; gli altri ${emozioni.length - n} sono ancora da scoprire.`;
+    $('[data-avviso]').hidden = persistente();
+    if (dialogo.open && aperta) mostraDettaglio(aperta, false);
+  }
+
+  // ---- Dettaglio di un francobollo (finestra modale nativa) ----
+  const dialogo = $<HTMLDialogElement>('[data-dettaglio]');
+  const btnPref = $<HTMLButtonElement>('[data-d-preferito]');
+  const msg = $('[data-d-msg]');
+  let aperta: string | null = null;
+
+  function mostraDettaglio(id: string, apri = true) {
+    const e = emozione(id);
+    const ok = sbloccati(attuale);
+    if (!e || !ok.has(id)) { if (dialogo.open) dialogo.close(); return; }
+    aperta = id;
+    const volte = conteggi(attuale).get(id) ?? 0;
+    const pref = preferitiValidi(attuale).includes(id);
+    $<HTMLImageElement>('[data-d-img]', dialogo).src = base + percorsoFrancobollo(e, definitivi);
+    $('[data-d-nome]', dialogo).textContent = e.nome;
+    $('[data-d-percorso]', dialogo).textContent = `${famiglia(e.famiglia)?.nome} › ${intermedia(e.intermedia)?.nome} › ${e.nome}`;
+    $('[data-d-info]', dialogo).textContent =
+      `Sbloccato il ${dataLunga(ok.get(id)!)} · scelto ${volte} ${volte === 1 ? 'volta' : 'volte'}`;
+    btnPref.textContent = pref ? 'Togli dalla home' : 'Metti nella home';
+    btnPref.setAttribute('aria-pressed', String(pref));
+    if (apri) {
+      msg.textContent = '';
+      dialogo.showModal();
+    }
+  }
+
+  for (const b of bottoni) b.addEventListener('click', () => { if (b.dataset.id) mostraDettaglio(b.dataset.id); });
+  dialogo.addEventListener('close', () => {
+    // il focus torna al francobollo che era aperto
+    if (aperta) document.querySelector<HTMLButtonElement>(`.fb__francobollo[data-id="${aperta}"]`)?.focus();
+    aperta = null;
+  });
+  // tocco fuori dalla finestra = chiudi
+  dialogo.addEventListener('click', (ev) => { if (ev.target === dialogo) dialogo.close(); });
+
+  btnPref.addEventListener('click', () => {
+    if (!aperta) return;
+    const id = aperta;
+    const prima = preferitiValidi(leggi()).includes(id);
+    const ora = preferitiValidi(aggiorna((s) => alternaPreferito(s, id))).includes(id);
+    if (prima === ora) msg.textContent = `Nella home ci sono già ${MAX_PREFERITI} francobolli: togline uno per mettere questo.`;
+    else msg.textContent = ora ? 'Fatto: ora lo trovi nella home.' : 'Tolto dalla home.';
+  });
+
+  osserva(disegna);
+
+  // ---- Sblocco di prova: solo in sviluppo (nella build pubblicata questo blocco viene eliminato) ----
+  if (import.meta.env.DEV) {
+    const p = document.querySelector('[data-prova]');
+    if (p) {
+      const data = $<HTMLInputElement>('[data-prova-data]', p);
+      data.value = dataDiOggi();
+      $('[data-prova-sblocca]', p).addEventListener('click', () => {
+        const id = $<HTMLSelectElement>('[data-prova-emozione]', p).value;
+        aggiorna((s) => impostaGiorno(s, data.value || dataDiOggi(), id));
+      });
+      $('[data-prova-caso]', p).addEventListener('click', () => {
+        aggiorna((s) => {
+          let t = s;
+          for (let i = 0; i < 5; i++) {
+            const e = emozioni[Math.floor(Math.random() * emozioni.length)];
+            t = impostaGiorno(t, dataDiOggi(new Date(Date.now() - Math.floor(Math.random() * 300) * 864e5)), e.id);
+          }
+          return t;
+        });
+      });
+      $('[data-prova-azzera]', p).addEventListener('click', () => scrivi(statoVuoto()));
+    }
+  }
+</script>
+
+<style>
+  /*
+    Misure in punti mockup (tavola 4, 940 x 1200; 1 punto = var(--u)).
+    La pagina è una colonna: in alto il portafoglio (centrato nello spazio libero), in basso la fascia.
+    Se lo schermo è più alto del mockup cresce solo lo spazio intorno al portafoglio.
+  */
+  .fb {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: max(100dvh, calc(1200 * var(--u)));
+    background: linear-gradient(90deg, #e8cfc4 0%, #fbf4f0 9%, #f4e5dc 40%, #e9d3c4 100%);
+  }
+
+  .fb__indietro {
+    position: absolute;
+    z-index: 2;
+    top: calc(40 * var(--u));
+    left: calc(40 * var(--u));
+    color: var(--bordeaux);
+    font-weight: 700;
+    font-size: max(13px, calc(30 * var(--u)));
+    text-decoration: none;
+  }
+
+  /* Portafoglio: busta x 106-457, cartellina x 483-834, alte 265 */
+  .fb__portafoglio {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: calc(150 * var(--u)) 0 calc(60 * var(--u));
+  }
+  .fb__icone {
+    display: flex;
+    justify-content: center;
+    gap: calc(26 * var(--u));
+  }
+  .fb__icona {
+    display: block;
+    width: calc(351 * var(--u));
+    height: calc(265 * var(--u));
+    padding: 0;
+    border: 0;
+    border-radius: calc(10 * var(--u));
+    background: none;
+    filter: drop-shadow(0 calc(4 * var(--u)) calc(3 * var(--u)) rgb(120 80 70 / 0.18));
+    cursor: pointer;
+    transition: transform 160ms ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .fb__icona img { display: block; width: 100%; height: 100%; }
+  .fb__icona:active { transform: scale(0.97); }
+  .fb__messaggio {
+    min-height: 1.4em;
+    margin: calc(24 * var(--u)) 0 0;
+    color: var(--bordeaux);
+    font-weight: 700;
+    font-size: max(13px, calc(30 * var(--u)));
+    text-align: center;
+  }
+
+  /* Fascia FRANCOBOLLI: slot 45,44 x 58,1, passo 55,4 in orizzontale e 72 in verticale, 16 per riga */
+  .fb__fascia {
+    padding: calc(28 * var(--u)) calc(31.8 * var(--u)) calc(50 * var(--u));
+    background: rgb(160 140 136 / 0.16);
+  }
+  .fb__titolo {
+    margin: 0 0 calc(10 * var(--u));
+    font-family: var(--font-ui);
+    font-weight: 900;
+    font-size: calc(32 * var(--u));
+    letter-spacing: 0.01em;
+    line-height: 1;
+    text-align: center;
+    color: var(--inchiostro);
+  }
+  .fb__griglia {
+    display: grid;
+    grid-template-columns: repeat(16, calc(45.44 * var(--u)));
+    gap: calc(13.9 * var(--u)) calc(9.96 * var(--u));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .fb__francobollo {
+    position: relative;
+    display: block;
+    width: calc(45.44 * var(--u));
+    height: calc(58.1 * var(--u));
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .fb__francobollo:disabled { cursor: default; }
+  .fb__francobollo img { display: block; width: 100%; height: 100%; }
+  /* area di tocco un po' più grande del francobollo (non sposta nulla) */
+  .fb__francobollo:not(:disabled)::after {
+    content: '';
+    position: absolute;
+    inset: calc(-6 * var(--u)) calc(-4 * var(--u));
+  }
+  .fb__francobollo:not(:disabled):active img { transform: scale(0.92); }
+  .fb__cuore,
+  .fb__cuore-testo {
+    fill: var(--rosso);
+    stroke: #fff;
+    stroke-width: 2.5;
+    paint-order: stroke;
+  }
+  .fb__cuore {
+    position: absolute;
+    top: calc(-9 * var(--u));
+    right: calc(-9 * var(--u));
+    width: calc(24 * var(--u));
+    display: none;
+  }
+  .fb__francobollo.is-preferito .fb__cuore { display: block; }
+  .fb__cuore-testo { width: 1em; height: 0.9em; vertical-align: -0.1em; }
+
+  .fb__info {
+    display: flex;
+    justify-content: space-between;
+    margin: calc(26 * var(--u)) 0 0;
+    font-size: max(13px, calc(30 * var(--u)));
+    color: var(--grigio-testo);
+  }
+  .fb__info strong { color: var(--bordeaux); }
+  .fb__nota {
+    margin: calc(6 * var(--u)) 0 0;
+    font-size: max(12px, calc(26 * var(--u)));
+    color: var(--grigio-testo);
+  }
+  .fb__avviso {
+    margin: 0.8em 0 0;
+    padding: 0.5em 0.7em;
+    border-radius: 8px;
+    background: var(--rosa-chiaro);
+    color: var(--bordeaux);
+    font-size: 13px;
+  }
+
+  /* Focus visibile */
+  .fb a:focus-visible,
+  .fb button:focus-visible,
+  .fb select:focus-visible,
+  .fb input:focus-visible {
+    outline: 2px solid var(--bordeaux);
+    outline-offset: 3px;
+  }
+  .fb__icona:focus-visible { outline-width: 3px; }
+
+  .fb__bottone {
+    padding: 0.55em 1.1em;
+    border: 2px solid var(--bordeaux);
+    border-radius: 999px;
+    background: var(--bordeaux);
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .fb__bottone--secondario { background: #fff; color: var(--bordeaux); }
+
+  /* Pannello di prova (solo npm run dev) */
+  .fb__prova {
+    margin-top: 1.2em;
+    padding: 0.8em;
+    border: 2px dashed var(--senape);
+    border-radius: 10px;
+    background: #fff;
+    font-size: 14px;
+  }
+  .fb__prova h2 { margin: 0; font-size: 15px; }
+  .fb__prova p { margin: 0.3em 0; color: var(--grigio-testo); }
+  .fb__prova label { display: block; margin: 0.4em 0; }
+  .fb__prova select, .fb__prova input { display: block; width: 100%; font: inherit; margin-top: 0.2em; }
+  .fb__prova-bottoni { display: flex; flex-wrap: wrap; gap: 0.4em; margin: 0.6em 0 70px; } /* spazio per la barra di Astro dev */
+
+  /* Finestra di dettaglio */
+  .dettaglio {
+    width: min(86vw, 340px);
+    padding: 22px 20px 18px;
+    border: 0;
+    border-radius: 18px;
+    background: #fff;
+    color: var(--inchiostro);
+    text-align: center;
+    font-size: 15px;
+    box-shadow: 0 12px 40px rgb(34 31 32 / 0.25);
+  }
+  .dettaglio[open] { animation: entra 220ms ease-out; }
+  .dettaglio::backdrop { background: rgb(34 31 32 / 0.45); }
+  @keyframes entra {
+    from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  }
+  .dettaglio__chiudi {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background: none;
+    font-size: 28px;
+    line-height: 1;
+    color: var(--grigio-testo);
+    cursor: pointer;
+  }
+  .dettaglio__img { display: block; width: 110px; height: auto; margin: 0 auto 10px; }
+  .dettaglio__nome {
+    margin: 0;
+    font-family: var(--font-titolo);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 30px;
+    color: var(--bordeaux);
+  }
+  .dettaglio__percorso { margin: 4px 0 0; color: var(--grigio-testo); }
+  .dettaglio__info { margin: 4px 0 16px; color: var(--grigio-testo); font-size: 13px; }
+  .dettaglio__msg { min-height: 1.3em; margin: 10px 0 0; color: var(--bordeaux); font-size: 13px; }
+  .dettaglio :focus-visible { outline: 3px solid var(--bordeaux); outline-offset: 3px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dettaglio[open] { animation: none; }
+    .fb__icona, .fb__francobollo img { transition: none; transform: none !important; }
+  }
+</style>

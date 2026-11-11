@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 351 265">
+  <!-- SEGNAPOSTO (Fase 3), ridisegnato dal mockup Francobolli_e_luna_park.pdf (tavola 4): busta con cuore.
+       Misure in punti mockup (351 x 265). Per il definitivo: public/grafica/portafoglio-busta.svg, stesso viewBox. -->
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0" stop-color="#a65e5e"/><stop offset=".1" stop-color="#efe2c9"/>
+      <stop offset=".45" stop-color="#c79c8d"/><stop offset=".8" stop-color="#a65f5f"/><stop offset="1" stop-color="#8b4b4f"/>
+    </linearGradient>
+    <linearGradient id="c" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#6d8a55"/><stop offset="1" stop-color="#2f4426"/>
+    </linearGradient>
+  </defs>
+  <rect width="351" height="265" rx="10" fill="url(#g)"/>
+  <rect x="9" y="9" width="333" height="247" rx="4" fill="none" stroke="#7a1f22" stroke-width="2" stroke-dasharray="9 7"/>
+  <path d="M0 68 Q4 84 22 92 L150 146 Q175 156 200 146 L329 92 Q347 84 351 68 V10 Q351 0 341 0 H10 Q0 0 0 10 Z" fill="#fff" opacity=".12"/>
+  <path d="M0 74 Q4 90 22 98 L150 152 Q175 162 200 152 L329 98 Q347 90 351 74" fill="none" stroke="#6f3b38" stroke-opacity=".25" stroke-width="6"/>
+  <path d="M14 88 L150 142 Q175 152 200 142 L337 88" fill="none" stroke="#9f4a3d" stroke-width="2" stroke-dasharray="9 7"/>
+  <path d="M174 118 C150 102 140 86 145 72 C150 60 166 60 174 74 C179 58 197 56 203 70 C209 84 196 104 174 118 Z" fill="url(#c)" stroke="#263a20" stroke-width="3" stroke-linejoin="round"/>
+</svg>

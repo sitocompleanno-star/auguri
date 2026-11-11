@@ -5,7 +5,9 @@ import Cornice from '../components/Cornice.astro';
 import PulsanteGioco from '../components/PulsanteGioco.astro';
 import StripFrancobolli from '../components/StripFrancobolli.astro';
 import { zampe, zampaVisibile, giochi, francobolli } from '../data/home';
+import { controllaRuota } from '../lib/francobolli-definitivi.ts';
 const base = import.meta.env.BASE_URL;
+controllaRuota();
 ---
 <Base>
   <main class="home">
@@ -26,7 +28,7 @@ const base = import.meta.env.BASE_URL;
     </div>
 
     <div class="home__strip">
-      <StripFrancobolli totale={francobolli.totale} ottenuti={francobolli.ottenuti} />
+      <StripFrancobolli totale={francobolli.totale} preferiti href={`${base}francobolli/`} />
     </div>
   </main>
 </Base>

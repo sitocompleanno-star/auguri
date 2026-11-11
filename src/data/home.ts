@@ -24,8 +24,7 @@ export const giochi = [
 ];
 
 export const francobolli = {
+  // Slot della striscia in home: mostra i francobolli PREFERITI (max 9) scelti in /francobolli/ (Fase 3).
+  // I preferiti arrivano dallo stato in localStorage (src/lib/stato.ts); gli slot liberi restano vuoti.
   totale: 9,
-  // Francobolli ottenuti: per ora placeholder in public/placeholders/ (stessa misura dello slot vuoto).
-  // In Fase 4 verranno dallo stato in localStorage.
-  ottenuti: ['francobollo-1.svg', 'francobollo-2.svg'],
 };

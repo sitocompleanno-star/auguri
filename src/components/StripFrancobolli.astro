@@ -1,23 +1,45 @@
 ---
-// Striscia "Collezione di francobolli": slot pieni (ottenuti) e vuoti fino a `totale`.
-// Gli slot vuoti sono l'SVG definitivo (grafica/francobollo-vuoto.svg); quelli pieni, per ora, placeholder.
+// Striscia "Collezione di francobolli": slot pieni e vuoti fino a `totale`.
+// Gli slot vuoti sono l'SVG definitivo (grafica/francobollo-vuoto.svg).
+//
+// Due modi:
+//  - statico (Fase 1): `ottenuti` = nomi file in public/placeholders/
+//  - `preferiti` (Fase 3): al build tutti vuoti; nel browser lo script li riempie con i francobolli preferiti
+//    salvati nello stato (localStorage) e li aggiorna se cambiano.
+// Con `href` tutta la striscia diventa un link (es. verso /francobolli/).
+import { francobolliDefinitivi } from '../lib/francobolli-definitivi.ts';
+import { FRANCOBOLLO_VUOTO } from '../lib/francobolli.ts';
+
 interface Props {
   totale?: number;
   ottenuti?: string[];
+  preferiti?: boolean;
+  href?: string;
+  titolo?: string;
 }
-const { totale = 9, ottenuti = [] } = Astro.props;
+const { totale = 9, ottenuti = [], preferiti = false, href, titolo = 'Collezione di francobolli' } = Astro.props;
 const base = import.meta.env.BASE_URL;
-const slot = Array.from({ length: totale }, (_, i) => ottenuti[i] ?? null);
+const slot = Array.from({ length: totale }, (_, i) => (preferiti ? null : ottenuti[i] ?? null));
+const idTitolo = `titolo-strip-${Math.random().toString(36).slice(2, 8)}`;
 ---
-<section class="strip" aria-labelledby="titolo-francobolli">
-  <h2 id="titolo-francobolli" class="visually-hidden">Collezione di francobolli</h2>
+<section
+  class="strip"
+  aria-labelledby={idTitolo}
+  data-strip-preferiti={preferiti ? '' : undefined}
+  data-base={base}
+  data-definitivi={preferiti ? JSON.stringify(francobolliDefinitivi()) : undefined}
+>
+  <h2 id={idTitolo} class="visually-hidden">{titolo}</h2>
   <img class="strip__sfondo" src={`${base}grafica/collezione-francobolli.svg`} alt="" width="528.97" height="132.88" />
-  <ul class="strip__slot">
+  {href && (
+    <a class="strip__link" href={href}><span class="visually-hidden">Apri la collezione di francobolli</span></a>
+  )}
+  <ul class="strip__slot" aria-label={preferiti ? 'Francobolli preferiti' : undefined}>
     {slot.map((file) => (
       <li>
         <img
-          src={file ? `${base}placeholders/${file}` : `${base}grafica/francobollo-vuoto.svg`}
-          alt={file ? 'Francobollo ottenuto' : 'Francobollo ancora da ottenere'}
+          src={file ? `${base}placeholders/${file}` : `${base}${FRANCOBOLLO_VUOTO}`}
+          alt={file ? 'Francobollo ottenuto' : preferiti ? 'Spazio libero' : 'Francobollo ancora da ottenere'}
           width="45.44"
           height="58.1"
         />
@@ -25,6 +47,29 @@ const slot = Array.from({ length: totale }, (_, i) => ottenuti[i] ?? null);
     ))}
   </ul>
 </section>
+
+<script>
+  import { osserva, preferitiValidi } from '../lib/stato.ts';
+  import { emozione, famiglia } from '../data/emozioni.ts';
+  import { FRANCOBOLLO_VUOTO, percorsoFrancobollo } from '../lib/francobolli.ts';
+
+  for (const strip of document.querySelectorAll<HTMLElement>('[data-strip-preferiti]')) {
+    const base = strip.dataset.base ?? '/';
+    const definitivi = new Set<string>(JSON.parse(strip.dataset.definitivi ?? '[]'));
+    const imgs = [...strip.querySelectorAll<HTMLImageElement>('.strip__slot img')];
+
+    osserva((stato) => {
+      const ids = preferitiValidi(stato);
+      imgs.forEach((img, i) => {
+        const e = ids[i] ? emozione(ids[i]) : undefined;
+        const src = base + (e ? percorsoFrancobollo(e, definitivi) : FRANCOBOLLO_VUOTO);
+        if (img.getAttribute('src') !== src) img.setAttribute('src', src);
+        img.alt = e ? `Francobollo ${e.nome} (${famiglia(e.famiglia)?.nome ?? ''})` : 'Spazio libero';
+        img.closest('li')?.classList.toggle('is-pieno', !!e);
+      });
+    });
+  }
+</script>
 
 <style>
   /* Striscia 528,97 x 132,88; slot 45,44 x 58,1 con passo 55,4 (misurato sul mockup) */
@@ -54,4 +99,22 @@ const slot = Array.from({ length: totale }, (_, i) => ottenuti[i] ?? null);
     width: calc(45.44 * var(--u));
     height: calc(58.1 * var(--u));
   }
+
+  /* Link su tutta la striscia (sopra le immagini, che restano leggibili dagli screen reader) */
+  .strip__link {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: calc(6 * var(--u));
+    -webkit-tap-highlight-color: transparent;
+  }
+  .strip__link:focus { outline: none; }
+  .strip__link:focus-visible {
+    outline: 3px solid var(--bordeaux);
+    outline-offset: 3px;
+  }
+  @media (hover: hover) {
+    .strip__link:hover { background: rgb(247 220 206 / 0.25); }
+  }
+  .strip__link:active { background: rgb(247 220 206 / 0.35); }
 </style>

@@ -25,14 +25,14 @@ Layout fedele al mockup: titolo, sfondo con foglia, 5 zampe a sinistra, cornice 
 Zampa che scivola fuori al tap, mostrando il nome della sezione; navigazione verso le pagine (Diario, Archivio, Luna Park, Club degli Amici, Caos); transizioni tra pagine; pagine interne vuote con titolo.
 **Fatto quando:** si naviga tra tutte le pagine con animazione fluida su telefono. ✅ (2026-10-29; da provare su telefono reale)
 
-### Fase 3 · Emozioni, stato e francobolli
+### Fase 3 · Emozioni, stato e francobolli ✅
 Modello dati delle emozioni e dei francobolli, stato salvato in `localStorage`, striscia della home con francobolli veri e "preferiti", pagina Francobolli (portafoglio + griglia, senza cartoline).
-- `src/data/emozioni.ts`: ruota a 3 livelli (6 famiglie → emozioni → emozioni di ultimo livello, ~70). Ogni emozione di ultimo livello ha `id`, `nome`, `famiglia`, `iniziale` e `simbolo` e un francobollo. Il colore è per famiglia (palette ispirata alle ruote delle emozioni), con sfumatura diversa per le emozioni interne.
+- `src/data/emozioni.ts`: ruota a 3 livelli (6 famiglie del mockup Diario → 36 emozioni intermedie → 72 di ultimo livello). Ogni emozione di ultimo livello ha `id`, `nome`, `famiglia`, `iniziale` e `simbolo` e un francobollo. Il colore è per famiglia (palette ispirata alle ruote delle emozioni), con sfumatura diversa per le emozioni interne.
 - Ogni francobollo si distingue anche senza il colore: segno/simbolo + lettera iniziale dell'emozione.
 - Stato (un unico oggetto JSON con `versione`): `giorni` (`"AAAA-MM-GG"` → emozione, con data di modifica), `preferiti` (max 9, scelti per la home), `cartoline` (vedi Fase 5). I francobolli sbloccati si **calcolano** dai giorni, non si salvano.
 - Home: la striscia mostra i preferiti (se ce ne sono meno di 9, gli altri slot restano vuoti); i francobolli senza SVG usano placeholder in `public/placeholders/`, con lo stesso `viewBox` e nome dei definitivi.
 - Click su "Collezione di francobolli" → `/francobolli/`: portafoglio con le due icone (cuore e Travel, come nel mockup), griglia con francobolli sbloccati e vuoti, scelta dei preferiti.
-**Fatto quando:** uno sblocco di prova compare nella griglia e tra i preferiti in home e persiste al ricaricamento.
+**Fatto quando:** uno sblocco di prova compare nella griglia e tra i preferiti in home e persiste al ricaricamento. ✅ (2026-11-11; ruota provvisoria, da confermare)
 
 ### Fase 4 · Diario
 Pagina `/diario/`: flusso "Come ti senti oggi?" a 3 livelli, calendario annuale (anno corrente, con cambio anno), giorni che si colorano, sblocco del francobollo.
@@ -98,9 +98,10 @@ Decisione: **solo GitHub**, nessun servizio esterno per i file; i video vanno su
 - Foto e frase del giorno rimandate (mancano i contenuti).
 
 ## Da decidere
-- Elenco completo delle emozioni (3 livelli) e palette per famiglia
+- Conferma dell'elenco delle emozioni (3 livelli, proposta provvisoria in `src/data/emozioni.ts`) e della palette per famiglia
 - Grafica dei francobolli (placeholder fino ad allora) e delle cartoline definitive
 - Se si possono compilare i giorni futuri (default proposto: no)
+- Se la griglia dei francobolli resta "in ordine di sblocco" (come il mockup) o per famiglia
 - Nome del repository GitHub (influisce sul `base` di Astro)
 - Ordine delle pagine interne (Fase 10)
 - Quando sostituire i placeholder con gli SVG definitivi

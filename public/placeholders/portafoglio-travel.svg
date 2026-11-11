@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 351 265">
+  <!-- SEGNAPOSTO (Fase 3), ridisegnato dal mockup Francobolli_e_luna_park.pdf (tavola 4): cartellina verde
+       con cartolina-mappa e biglietto TRAVEL. Per il definitivo: public/grafica/portafoglio-travel.svg, stesso viewBox. -->
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0" stop-color="#4c623f"/><stop offset=".15" stop-color="#617452"/>
+      <stop offset=".7" stop-color="#2f3f2b"/><stop offset="1" stop-color="#2c3a28"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="0" width="319" height="60" rx="8" fill="#cdb27a"/>
+  <path d="M30 12 q30 8 60 0 t70 4 M190 10 q40 10 80 -2 t50 6" stroke="#b89a62" stroke-width="3" fill="none" opacity=".7"/>
+  <path d="M0 28 Q0 19 9 19 H112 L140 54 H233 L261 19 H342 Q351 19 351 28 V256 Q351 265 342 265 H9 Q0 265 0 256 Z" fill="url(#g)"/>
+  <path d="M10 28 H108 L136 63 H237 L265 28 H341 V255 H10 Z" fill="none" stroke="#c9958c" stroke-width="2" stroke-dasharray="9 7" stroke-linejoin="round"/>
+  <g transform="rotate(-4 175 156)">
+    <path d="M110 118 h130 a10 10 0 0 0 10 10 v56 a10 10 0 0 0 -10 10 h-130 a10 10 0 0 0 -10 -10 v-56 a10 10 0 0 0 10 -10 Z" fill="#f5e6c8" stroke="#7d4a3a" stroke-width="3"/>
+    <text x="175" y="146" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="17" letter-spacing="2" fill="#6f3b2e">✈ TRAVEL ✈</text>
+    <rect x="115" y="156" width="120" height="24" rx="2" fill="#d9b497" stroke="#c49a7c"/>
+  </g>
+</svg>
