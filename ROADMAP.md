@@ -25,25 +25,47 @@ Layout fedele al mockup: titolo, sfondo con foglia, 5 zampe a sinistra, cornice 
 Zampa che scivola fuori al tap, mostrando il nome della sezione; navigazione verso le pagine (Diario, Archivio, Luna Park, Club degli Amici, Caos); transizioni tra pagine; pagine interne vuote con titolo.
 **Fatto quando:** si naviga tra tutte le pagine con animazione fluida su telefono. ✅ (2026-10-29; da provare su telefono reale)
 
-### Fase 3 · Foto e frase del giorno
-Dati in `src/data/foto.json` e `frasi.json`; scelta deterministica dalla data (stessa foto/frase per tutto il giorno). Foto in `public/media/foto/`, già compresse (vedi "Gestione dei media").
+### Fase 3 · Emozioni, stato e francobolli
+Modello dati delle emozioni e dei francobolli, stato salvato in `localStorage`, striscia della home con francobolli veri e "preferiti", pagina Francobolli (portafoglio + griglia, senza cartoline).
+- `src/data/emozioni.ts`: ruota a 3 livelli (6 famiglie → emozioni → emozioni di ultimo livello, ~70). Ogni emozione di ultimo livello ha `id`, `nome`, `famiglia`, `iniziale` e `simbolo` e un francobollo. Il colore è per famiglia (palette ispirata alle ruote delle emozioni), con sfumatura diversa per le emozioni interne.
+- Ogni francobollo si distingue anche senza il colore: segno/simbolo + lettera iniziale dell'emozione.
+- Stato (un unico oggetto JSON con `versione`): `giorni` (`"AAAA-MM-GG"` → emozione, con data di modifica), `preferiti` (max 9, scelti per la home), `cartoline` (vedi Fase 5). I francobolli sbloccati si **calcolano** dai giorni, non si salvano.
+- Home: la striscia mostra i preferiti (se ce ne sono meno di 9, gli altri slot restano vuoti); i francobolli senza SVG usano placeholder in `public/placeholders/`, con lo stesso `viewBox` e nome dei definitivi.
+- Click su "Collezione di francobolli" → `/francobolli/`: portafoglio con le due icone (cuore e Travel, come nel mockup), griglia con francobolli sbloccati e vuoti, scelta dei preferiti.
+**Fatto quando:** uno sblocco di prova compare nella griglia e tra i preferiti in home e persiste al ricaricamento.
+
+### Fase 4 · Diario
+Pagina `/diario/`: flusso "Come ti senti oggi?" a 3 livelli, calendario annuale (anno corrente, con cambio anno), giorni che si colorano, sblocco del francobollo.
+- Si può cambiare l'emozione di un giorno passato; per default non si compilano i giorni futuri (da confermare).
+- La casella del giorno ha il colore della famiglia e il simbolo/iniziale dell'emozione (non solo il colore).
+- Le date seguono il fuso Europe/Rome.
+**Fatto quando:** si sceglie un'emozione, il giorno si dipinge, il francobollo si sblocca e tutto resta dopo il ricaricamento.
+
+### Fase 5 · Cartoline e PDF
+Dentro `/francobolli/`: due cartoline (fiore e mappa, dalle tavole del mockup; predisposto per altre in futuro) a cui si attaccano i francobolli sbloccati, con posizione e rotazione salvate nello stato.
+- Un clic sulla prima o sulla seconda icona del portafoglio apre la cartolina corrispondente.
+- PDF a due facciate (fronte e retro), formato 10 x 15 cm (150 x 100 mm in orizzontale come nelle tavole), generato nel browser: disegno su canvas a 300 dpi e inserimento con una libreria PDF caricata solo in questa pagina (es. `pdf-lib`).
+**Fatto quando:** si compone una cartolina, si scarica il PDF e si stampa fronte-retro a 10 x 15 cm con i francobolli al posto giusto.
+
+### Fase 6 · Sincronizzazione tra dispositivi (senza login)
+Il codice segreto viene generato sul dispositivo dell'utente al primo salvataggio (nessuno lo vede, nemmeno chi ha costruito il sito). Dati cifrati nel browser (chiave derivata dal codice) e salvati su un piccolo servizio gratuito (previsto Cloudflare Workers + KV). "Collega un altro dispositivo" con QR/link; unione per giorno (vince la modifica più recente); esportazione/importazione del file come rete di sicurezza. Il repository è pubblico: nessun segreto nel codice.
+**Fatto quando:** un secondo dispositivo, collegato col QR, vede gli stessi giorni e francobolli e le modifiche si uniscono senza perdite.
+
+### Fase 7 · Foto e frase del giorno (rimandata)
+Rimandata: mancano foto e frasi. Dati in `src/data/foto.json` e `frasi.json`; scelta deterministica dalla data (stessa foto/frase per tutto il giorno). Foto in `public/media/foto/`, già compresse (vedi "Gestione dei media"). Prompt già pronto in `fasi/fase-2/PROMPT_FOTO_FRASE.md`.
 **Fatto quando:** foto e frase cambiano ogni giorno senza backend e il peso di `dist/` è sotto controllo.
 
-### Fase 4 · Francobolli collezionabili
-Modello dati dei francobolli (id, titolo, immagine, condizione di sblocco), stato in `localStorage`, visualizzazione degli slot vuoti/pieni.
-**Fatto quando:** uno sblocco di prova compare nella striscia e persiste al ricaricamento.
-
-### Fase 5 · Primo gioco (memory)
-Gioco memory a carte, collegato al primo pulsante; vittoria che sblocca un francobollo.
+### Fase 8 · Primo gioco (memory)
+Gioco memory a carte, collegato al primo pulsante; vittoria che sblocca un francobollo (si aggiunge ai francobolli del Diario).
 **Fatto quando:** si gioca, si vince, si ottiene il francobollo.
 
-### Fase 6 · Altri giochi
-Quiz, puzzle, ecc., uno per volta, ciascuno con la propria mini-fase.
+### Fase 9 · Altri giochi e Luna Park
+Quiz, puzzle, ecc., uno per volta. Luna Park (ruota della fortuna con tre pulsanti CASO / LOVE / COSE, dal PDF `Francobolli_e_luna_park.pdf`) si sviluppa più avanti, quando le fasi precedenti sono chiuse.
 
-### Fase 7 · Pagine interne
-Contenuti di Diario, Archivio, Luna Park, Club degli Amici, Caos, nell'ordine da decidere.
+### Fase 10 · Altre pagine interne
+Archivio, Club degli Amici, Caos: contenuti, nell'ordine da decidere.
 
-### Fase 8 · Desktop e rifinitura
+### Fase 11 · Desktop e rifinitura
 Layout desktop, performance, accessibilità (contrasto, focus, `prefers-reduced-motion`), test su dispositivi reali, sostituzione definitiva dei placeholder con gli SVG finali (se non già fatto prima).
 
 ## Gestione dei media
@@ -66,8 +88,19 @@ Decisione: **solo GitHub**, nessun servizio esterno per i file; i video vanno su
 - Target: mobile-first
 - SVG: definitivi per la home (Fase 1); placeholder per ciò che manca (francobolli pieni)
 
-## Da decidere
+## Decisioni prese per Diario e Francobolli (2026-11-11)
 
+- Il sito è un regalo per una sola persona: nessun login; i dati restano su più dispositivi con un codice generato sul suo dispositivo (Fase 6).
+- Un colore per famiglia di emozioni; ogni emozione di ultimo livello ha un proprio francobollo con simbolo e iniziale, tutti distinguibili anche senza colore. Palette ispirata alle ruote delle emozioni.
+- Si può cambiare un giorno passato.
+- Francobolli: numero non deciso (probabilmente > 9); in home si mostrano i "preferiti" scelti dall'utente.
+- Cartoline in formato 10 x 15 cm, PDF a due facciate.
+- Foto e frase del giorno rimandate (mancano i contenuti).
+
+## Da decidere
+- Elenco completo delle emozioni (3 livelli) e palette per famiglia
+- Grafica dei francobolli (placeholder fino ad allora) e delle cartoline definitive
+- Se si possono compilare i giorni futuri (default proposto: no)
 - Nome del repository GitHub (influisce sul `base` di Astro)
-- Ordine delle pagine interne (Fase 7)
+- Ordine delle pagine interne (Fase 10)
 - Quando sostituire i placeholder con gli SVG definitivi

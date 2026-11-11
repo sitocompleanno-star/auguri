@@ -23,12 +23,12 @@ Rendere cliccabili le 5 zampe della home, con animazione (la zampa scivola fuori
 
 ## Decisioni prese
 - View Transitions native del browser invece di `ClientRouter` di Astro: meno JS, nessuna dipendenza, nessun ri-eseguire di script tra pagine.
-- Una sola rotta dinamica per le pagine interne (i contenuti diversi arriveranno in Fase 7: potranno tornare cartelle separate se serve).
+- Una sola rotta dinamica per le pagine interne (i contenuti diversi arriveranno nelle Fasi 4 e 10: potranno tornare cartelle separate se serve).
 - La zampa sulla pagina interna sta alla stessa altezza della home, quindi il passaggio è continuo; la dissolvenza cambia solo il resto della pagina.
 - Il braccio non cambia le dimensioni del blocco cliccabile a riposo (152 punti, ~63px a 390px), che resta un bersaglio comodo (altezza ~55px).
 
 ## Problemi aperti
-- Sulle pagine interne la zampa usa la stessa formula della home, con `100%` = altezza della pagina: quando in Fase 7 le pagine saranno più lunghe dello schermo, la zampa scenderà con la pagina. Da decidere (fissarla in alto o lasciarla).
+- Sulle pagine interne la zampa usa la stessa formula della home, con `100%` = altezza della pagina: quando le pagine (Diario in Fase 4, ecc.) saranno più lunghe dello schermo, la zampa scenderà con la pagina. Da decidere (fissarla in alto o lasciarla).
 - La scritta nel braccio è piccola (è disegnata nell'SVG, ~11px a 390px): da valutare con te se va ingrandita nell'SVG.
 - Le pagine interne usano ancora il font di sistema serif corsivo (provvisorio) e testi generici.
 - Mancano ancora gli SVG dei francobolli pieni (placeholder).

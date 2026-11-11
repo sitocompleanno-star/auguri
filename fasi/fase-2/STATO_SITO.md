@@ -59,11 +59,11 @@ Invariati (vedi Fase 1). Le pagine interne usano `--font-titolo` (serif corsivo 
 - Build statica completa (6 pagine), percorsi corretti con `base`.
 
 ## Cosa NON c'è ancora
-- Foto e frase del giorno (Fase 3)
-- Francobolli sbloccabili e stato in localStorage; SVG dei francobolli pieni (Fase 4)
-- Giochi collegati ai pulsanti (Fasi 5-6)
-- Contenuti delle pagine interne (Fase 7)
-- Layout desktop, accessibilità completa (Fase 8)
+- Emozioni, stato e francobolli (Fase 3); Diario (Fase 4); cartoline e PDF (Fase 5); sincronizzazione (Fase 6)
+- Foto e frase del giorno (Fase 7, rimandata: mancano i contenuti)
+- Giochi collegati ai pulsanti (Fasi 8-9)
+- Contenuti delle altre pagine interne (Fase 10)
+- Layout desktop, accessibilità completa (Fase 11)
 - Test su telefono reale e su Firefox
 
 ## Convenzioni
