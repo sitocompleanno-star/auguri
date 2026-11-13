@@ -4,7 +4,7 @@
 // NON è un segreto: è solo l'indirizzo del servizio, che vede soltanto dati cifrati.
 // Vuoto = sincronizzazione spenta: il sito funziona come prima ed esportazione/importazione restano attive.
 // In locale si può sovrascrivere con la variabile PUBLIC_SYNC_URL (es. PUBLIC_SYNC_URL=http://localhost:8787).
-export const URL_SERVIZIO = '';
+export const URL_SERVIZIO = 'minuscole-sync.sitocompleanno.workers.dev';
 
 /** Attesa dopo una modifica prima di sincronizzare: più modifiche ravvicinate diventano un solo invio. */
 export const RITARDO_MODIFICA_MS = 3000;
