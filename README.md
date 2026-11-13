@@ -27,6 +27,10 @@ Gli SVG definitivi sono in `public/grafica/` (nomi in minuscolo con trattini). I
 
 Tutto su GitHub, con un tetto di 1 GB per il sito pubblicato (obiettivo ~500 MB). Le foto vanno compresse prima del caricamento e messe in `public/media/`; i video vanno su YouTube (non in elenco) e si incorporano. Dettagli in `ROADMAP.md`, sezione "Gestione dei media".
 
+## Sincronizzazione tra dispositivi (Fase 6)
+
+I dati si sincronizzano cifrati tramite un piccolo Cloudflare Worker gratuito. Per attivarla: segui `worker/LEGGIMI.md` e metti l'indirizzo del Worker in `src/data/sincronizzazione.ts`. Per provarla in locale: `npm run servizio` e, in un altro terminale, `PUBLIC_SYNC_URL=http://localhost:8787 npm run dev`. Prove senza browser: `npm run prova-sync`.
+
 ## Fasi
 
 Ogni fase chiusa ha la sua cartella in `fasi/fase-N/` con `REPORT.md`, `STATO_SITO.md` e il prompt per la fase successiva.

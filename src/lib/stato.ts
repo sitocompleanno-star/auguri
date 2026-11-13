@@ -248,6 +248,28 @@ export function unisci(a: Stato, b: Stato): Stato {
   });
 }
 
+/**
+ * JSON con le chiavi in ordine (Fase 6): due stati con lo stesso contenuto danno lo stesso testo, anche se
+ * `unisci` ha costruito gli oggetti in un altro ordine. Serve a capire se c'è qualcosa da salvare o da inviare.
+ */
+export function canonico(s: Stato): string {
+  const ordina = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(ordina);
+    if (v && typeof v === 'object') {
+      return Object.fromEntries(Object.keys(v).sort().map((k) => [k, ordina((v as Record<string, unknown>)[k])]));
+    }
+    return v;
+  };
+  return JSON.stringify(ordina(s));
+}
+
+export const uguali = (a: Stato, b: Stato) => canonico(a) === canonico(b);
+
+/** true se lo stato non contiene ancora niente (nessun giorno, preferito o cartolina): non c'è nulla da sincronizzare. */
+export function senzaDati(s: Stato): boolean {
+  return Object.keys(s.giorni).length === 0 && s.preferiti.length === 0 && Object.keys(s.cartoline).length === 0;
+}
+
 /** Data di oggi "AAAA-MM-GG" nel fuso Europe/Rome (non quello del dispositivo). */
 export function dataDiOggi(d = new Date()): string {
   // en-CA formatta come AAAA-MM-GG

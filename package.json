@@ -8,7 +8,9 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "francobolli": "node --experimental-strip-types scripts/genera-francobolli.mjs"
+    "francobolli": "node --experimental-strip-types scripts/genera-francobolli.mjs",
+    "servizio": "node scripts/servizio-locale.mjs",
+    "prova-sync": "node --experimental-strip-types --no-warnings scripts/prova-sincronizzazione.mjs"
   },
   "dependencies": {
     "astro": "^7.4.1"

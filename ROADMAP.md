@@ -51,12 +51,13 @@ Dentro `/francobolli/`: due cartoline (fiore e mappa, dalle tavole del mockup; p
 - Due tocchi come nella tavola 12: il primo apre il portafoglio (tavola 5), il secondo fa uscire e allargare la cartolina (tavole 6-7).
 - Un francobollo per cartolina (`MAX_FRANCOBOLLI_CARTOLINA`), trascinato dal vassoio; retro senza scritte; PDF scritto senza librerie.
 
-### Fase 6 · Sincronizzazione tra dispositivi (senza login)
+### Fase 6 · Sincronizzazione tra dispositivi (senza login) ✅
 Il codice segreto viene generato sul dispositivo dell'utente al primo salvataggio (nessuno lo vede, nemmeno chi ha costruito il sito). Dati cifrati nel browser (chiave derivata dal codice) e salvati su un piccolo servizio gratuito (previsto Cloudflare Workers + KV). "Collega un altro dispositivo" con QR/link; unione per giorno (vince la modifica più recente); esportazione/importazione del file come rete di sicurezza. Il repository è pubblico: nessun segreto nel codice.
-**Fatto quando:** un secondo dispositivo, collegato col QR, vede gli stessi giorni e francobolli e le modifiche si uniscono senza perdite.
+**Fatto quando:** un secondo dispositivo, collegato col QR, vede gli stessi giorni e francobolli e le modifiche si uniscono senza perdite. ✅ (2026-11-13; provato con due browser e il servizio locale; **il Worker va pubblicato su Cloudflare**, vedi `worker/LEGGIMI.md`)
+- Pagina `/dispositivi/` (link in fondo a Francobolli): QR/link, codice, cartolina di recupero (PDF), copia di sicurezza, scollega / cambia codice.
 
 ### Fase 7 · Foto e frase del giorno (rimandata)
-Rimandata: mancano foto e frasi. Dati in `src/data/foto.json` e `frasi.json`; scelta deterministica dalla data (stessa foto/frase per tutto il giorno). Foto in `public/media/foto/`, già compresse (vedi "Gestione dei media"). Prompt già pronto in `fasi/fase-2/PROMPT_FOTO_FRASE.md`.
+Rimandata: mancano foto e frasi. Se mancano ancora, si anticipa la Fase 8 (prompt in `fasi/fase-6/PROMPT_FASE_7.md`). Dati in `src/data/foto.json` e `frasi.json`; scelta deterministica dalla data (stessa foto/frase per tutto il giorno). Foto in `public/media/foto/`, già compresse (vedi "Gestione dei media"). Prompt già pronto in `fasi/fase-2/PROMPT_FOTO_FRASE.md`.
 **Fatto quando:** foto e frase cambiano ogni giorno senza backend e il peso di `dist/` è sotto controllo.
 
 ### Fase 8 · Primo gioco (memory)
@@ -119,10 +120,19 @@ Decisione: **solo GitHub**, nessun servizio esterno per i file; i video vanno su
 - Un francobollo non più sbloccato si toglie dalla cartolina.
 - PDF generato senza librerie (generatore minimo in `src/lib/pdf-cartolina.ts`, ~3 KB, caricato al clic).
 
+## Decisioni prese per la sincronizzazione (Fase 6)
+
+- Servizio: Cloudflare Workers + KV (piano gratuito), pubblicato dal pannello web; codice in `worker/sincronizza.js`, guida in `worker/LEGGIMI.md`. L'indirizzo (non segreto) va in `src/data/sincronizzazione.ts`.
+- Codice di 120 bit generato sul dispositivo al primo salvataggio; dati cifrati nel browser (AES-GCM, chiave da HKDF); il servizio vede solo id, hash del token e buste cifrate.
+- Codice perso: cartolina di recupero stampabile (QR + codice) e copia di sicurezza in file (l'importazione unisce).
+- Scollegare: "Scollega questo dispositivo" (i dati restano) e "Cambia codice" (il vecchio viene ritirato, gli altri dispositivi vanno ricollegati).
+- Comandi in una pagina dedicata `/dispositivi/`, raggiunta dal link in fondo alla pagina Francobolli; stato breve solo lì accanto al link.
+
 ## Da decidere
 - Conferma dell'elenco delle emozioni (3 livelli, proposta provvisoria in `src/data/emozioni.ts`) e della palette per famiglia
 - Grafica dei francobolli (placeholder fino ad allora); cartoline e portafoglio definitivi dall'artista (oggi estratti dal mockup)
 - Se la griglia dei francobolli resta "in ordine di sblocco" (come il mockup) o per famiglia
 - Nome del repository GitHub (influisce sul `base` di Astro)
+- Quando pubblicare il Worker di Cloudflare (Fase 6: serve solo l'account di William)
 - Ordine delle pagine interne (Fase 10)
 - Quando sostituire i placeholder con gli SVG definitivi

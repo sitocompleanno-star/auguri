@@ -51,5 +51,11 @@ const { titolo = 'minuscole – L’universo delle cose' } = Astro.props;
         if (e.persisted) document.querySelectorAll('.is-moving').forEach((el) => el.classList.remove('is-moving'));
       });
     </script>
+    <script>
+      // Fase 6: sincronizzazione tra dispositivi, su ogni pagina (all'apertura, dopo le modifiche, al ritorno).
+      // Se il servizio non è configurato (URL vuoto in src/data/sincronizzazione.ts) non fa niente.
+      import { avvia } from '../lib/sincronizza.ts';
+      avvia();
+    </script>
   </body>
 </html>

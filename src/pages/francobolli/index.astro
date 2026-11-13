@@ -112,6 +112,10 @@ const [fiore, mappa] = cartoline;
       <p class="fb__avviso" data-avviso hidden>
         Questo browser non permette di salvare: le scelte valgono solo finché la pagina resta aperta.
       </p>
+      <p class="fb__dispositivi">
+        <a href={`${base}dispositivi/`}>Dispositivi e copia di sicurezza</a>
+        <span class="fb__sync" data-sync-breve hidden><span class="fb__sync-spia" aria-hidden="true"></span><span data-sync-testo></span></span>
+      </p>
 
       {dev && (
         <section class="fb__prova" data-prova aria-labelledby="titolo-prova">
@@ -277,6 +281,22 @@ const [fiore, mappa] = cartoline;
       });
       $('[data-prova-azzera]', p).addEventListener('click', () => scrivi(statoVuoto()));
     }
+  }
+</script>
+
+<script>
+  // Fase 6: stato breve della sincronizzazione accanto al link "Dispositivi" (solo quando è attiva).
+  import { osservaSync } from '../../lib/sincronizza.ts';
+  const breve = document.querySelector<HTMLElement>('[data-sync-breve]');
+  const TESTI: Record<string, string> = {
+    sincronizzato: 'sincronizzato', 'in-corso': 'sincronizzazione…', offline: 'offline', errore: 'errore', ritirato: 'da ricollegare',
+  };
+  if (breve) {
+    osservaSync((i) => {
+      breve.hidden = !TESTI[i.fase];
+      breve.dataset.fase = i.fase;
+      breve.querySelector('[data-sync-testo]')!.textContent = TESTI[i.fase] ?? '';
+    });
   }
 </script>
 
@@ -604,6 +624,18 @@ const [fiore, mappa] = cartoline;
     color: var(--bordeaux);
     font-size: 13px;
   }
+
+  /* Fase 6: link alla pagina Dispositivi, con lo stato della sincronizzazione (parola + spia) */
+  .fb__dispositivi { margin: 1.2em 0 0; font-size: 13px; text-align: center; color: var(--grigio-testo); }
+  .fb__dispositivi a { color: var(--bordeaux); font-weight: 700; }
+  .fb__sync { display: inline-flex; align-items: center; gap: 0.35em; margin-left: 0.5em; }
+  .fb__sync[hidden] { display: none; }
+  .fb__sync-spia { width: 0.6em; height: 0.6em; border-radius: 50%; background: var(--grigio-testo); }
+  .fb__sync[data-fase='sincronizzato'] .fb__sync-spia { background: #4f7a52; }
+  .fb__sync[data-fase='in-corso'] .fb__sync-spia,
+  .fb__sync[data-fase='offline'] .fb__sync-spia { background: var(--senape); }
+  .fb__sync[data-fase='errore'] .fb__sync-spia,
+  .fb__sync[data-fase='ritirato'] .fb__sync-spia { background: var(--rosso); }
 
   /* Focus visibile */
   .fb a:focus-visible,

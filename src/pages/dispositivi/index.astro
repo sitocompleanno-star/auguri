@@ -1,0 +1,533 @@
+---
+// Pagina Dispositivi (Fase 6): stato della sincronizzazione, collegamento di un altro dispositivo (QR e link),
+// collegamento di questo dispositivo con un codice, cartolina di recupero, copia di sicurezza, scollegamento.
+// Si raggiunge dal link in fondo alla pagina Francobolli. Il motore è in src/lib/sincronizza.ts (avviato da Base).
+// Arrivando da un QR o da un link l'indirizzo è /dispositivi/#collega=<codice>: il codice sta dopo il # e quindi
+// non arriva a nessun server (nemmeno a GitHub Pages).
+import Base from '../../layouts/Base.astro';
+
+const base = import.meta.env.BASE_URL;
+---
+<Base titolo="Dispositivi · minuscole">
+  <main class="disp" data-dispositivi data-fase="non-attiva">
+    <a class="disp__indietro" href={base}>← torna alla home</a>
+    <h1 class="disp__titolo">Dispositivi</h1>
+    <p class="disp__intro">
+      Il diario, i francobolli e le cartoline restano uguali su telefono, tablet e computer. I dati partono già
+      cifrati da qui: nessuno può leggerli, nemmeno chi ha fatto il sito.
+    </p>
+
+    <!-- Stato -->
+    <section class="carta carta--stato" aria-labelledby="titolo-stato" data-stato-carta tabindex="-1">
+      <h2 id="titolo-stato" class="visually-hidden">Stato della sincronizzazione</h2>
+      <p class="stato">
+        <span class="stato__spia" data-spia aria-hidden="true"></span>
+        <span data-stato-testo>…</span>
+      </p>
+      <p class="stato__dettaglio" data-stato-dettaglio></p>
+      <button type="button" class="bottone bottone--secondario" data-sincronizza hidden>Sincronizza ora</button>
+    </section>
+    <p class="visually-hidden" role="status" data-annuncio></p>
+
+    <!-- Arrivo da QR o link -->
+    <section class="carta carta--conferma" data-conferma hidden aria-labelledby="titolo-conferma" tabindex="-1">
+      <h2 id="titolo-conferma">Collegare questo dispositivo?</h2>
+      <p>Da ora in poi qui vedrai lo stesso diario dell'altro dispositivo. Quello che c'è già qui non si perde: si unisce.</p>
+      <div class="riga">
+        <button type="button" class="bottone" data-conferma-si>Collega</button>
+        <button type="button" class="bottone bottone--secondario" data-conferma-no>Annulla</button>
+      </div>
+    </section>
+
+    <!-- Collega un altro dispositivo -->
+    <section class="carta" data-sezione="altro" aria-labelledby="titolo-altro">
+      <h2 id="titolo-altro">Collega un altro dispositivo</h2>
+      <div data-altro-chiuso>
+        <p>Sull'altro dispositivo inquadra il QR con la fotocamera, oppure apri il link.</p>
+        <button type="button" class="bottone" data-mostra-qr aria-expanded="false" aria-controls="pannello-qr">Mostra il QR</button>
+      </div>
+      <div class="qr" id="pannello-qr" data-pannello-qr hidden>
+        <div class="qr__immagine" data-qr role="img" aria-label="QR per collegare un altro dispositivo"></div>
+        <p class="qr__avviso">Mostralo solo ai tuoi dispositivi: chi ha questo QR o il link può leggere il diario.</p>
+        <p class="qr__codice">Codice: <code data-codice></code></p>
+        <div class="riga">
+          <button type="button" class="bottone bottone--secondario" data-copia>Copia il link</button>
+          <button type="button" class="bottone bottone--secondario" data-condividi hidden>Condividi</button>
+          <button type="button" class="bottone bottone--secondario" data-nascondi-qr>Nascondi</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Collega questo dispositivo -->
+    <section class="carta" data-sezione="questo" aria-labelledby="titolo-questo">
+      <h2 id="titolo-questo">Collega questo dispositivo</h2>
+      <form class="modulo" data-modulo-codice>
+        <label for="campo-codice">Codice (dalla cartolina di recupero o dall'altro dispositivo)</label>
+        <input id="campo-codice" name="codice" autocomplete="off" autocapitalize="characters" spellcheck="false"
+          placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" aria-describedby="esito-codice" />
+        <button type="submit" class="bottone">Collega</button>
+        <p class="modulo__esito" id="esito-codice" data-esito-codice></p>
+      </form>
+      <div data-ricomincia hidden>
+        <p>Oppure ricomincia da qui con un codice nuovo: i dati di questo dispositivo diventano quelli da sincronizzare.</p>
+        <button type="button" class="bottone bottone--secondario" data-nuovo-codice>Usa un codice nuovo</button>
+      </div>
+    </section>
+
+    <!-- Cartolina di recupero -->
+    <section class="carta" data-sezione="recupero" aria-labelledby="titolo-recupero">
+      <h2 id="titolo-recupero">Cartolina di recupero</h2>
+      <p>
+        Se un giorno nessun dispositivo trovasse più il diario (telefono nuovo, dati del browser cancellati), con
+        questa cartolina lo ritrovi. Stampala o salvala in un posto sicuro.
+      </p>
+      <button type="button" class="bottone" data-recupero>Scarica la cartolina (PDF)</button>
+    </section>
+
+    <!-- Copia di sicurezza -->
+    <section class="carta" aria-labelledby="titolo-copia">
+      <h2 id="titolo-copia">Copia di sicurezza</h2>
+      <p>
+        Un file con i dati di questo dispositivo, da conservare dove vuoi. Importarlo <strong>unisce</strong> i dati
+        a quelli che ci sono già: non cancella niente.
+      </p>
+      <div class="riga">
+        <button type="button" class="bottone" data-esporta>Esporta il file</button>
+        <label class="bottone bottone--secondario bottone--file">
+          Importa un file
+          <input type="file" accept="application/json,.json" data-importa />
+        </label>
+      </div>
+      <p class="modulo__esito" data-esito-copia role="status"></p>
+    </section>
+
+    <!-- Scollega -->
+    <section class="carta" data-sezione="scollega" aria-labelledby="titolo-scollega">
+      <h2 id="titolo-scollega">Scollega</h2>
+      <p><strong>Questo dispositivo</strong> smette di sincronizzare. I dati restano qui.</p>
+      <button type="button" class="bottone bottone--secondario" data-chiedi="scollega">Scollega questo dispositivo</button>
+      <p><strong>Tutti gli altri</strong>: crei un codice nuovo e il vecchio smette di funzionare. Serve se perdi un telefono.
+        Dopo vanno ricollegati gli altri dispositivi e ristampata la cartolina di recupero.</p>
+      <button type="button" class="bottone bottone--secondario" data-chiedi="cambia">Cambia codice</button>
+    </section>
+
+    <dialog class="domanda" data-domanda aria-labelledby="domanda-titolo" aria-describedby="domanda-testo">
+      <form method="dialog">
+        <h2 id="domanda-titolo" data-domanda-titolo></h2>
+        <p id="domanda-testo" data-domanda-testo></p>
+        <div class="riga">
+          <button value="si" class="bottone" data-domanda-si></button>
+          <button value="no" class="bottone bottone--secondario">Annulla</button>
+        </div>
+      </form>
+    </dialog>
+  </main>
+</Base>
+
+<script>
+  import {
+    attiva, cambiaCodice, codiceAttuale, collega, esporta, importaFile, linkCollegamento, osservaSync,
+    scollega, servizioConfigurato, sincronizza, type InfoSync,
+  } from '../../lib/sincronizza.ts';
+  import { leggiCodice } from '../../lib/cifra.ts';
+  import { persistente } from '../../lib/stato.ts';
+
+  const pagina = document.querySelector<HTMLElement>('[data-dispositivi]')!;
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => pagina.querySelector<T>(s)!;
+  const annuncio = $('[data-annuncio]');
+  const annuncia = (t: string) => {
+    annuncio.textContent = '';
+    window.setTimeout(() => (annuncio.textContent = t), 50); // lo stesso testo due volte va riletto
+  };
+
+  // ---- stato ----
+  const ora = (iso: string) => {
+    const d = new Date(iso);
+    const fmt = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome', ...o }).format(d);
+    const giorno = fmt({ year: 'numeric', month: '2-digit', day: '2-digit' });
+    const oggi = new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+    return `${giorno === oggi ? 'oggi' : `il ${fmt({ day: 'numeric', month: 'long' })}`} alle ${fmt({ hour: '2-digit', minute: '2-digit' })}`;
+  };
+  const TESTI: Record<InfoSync['fase'], string> = {
+    'non-attiva': 'Sincronizzazione non attiva',
+    'non-collegato': 'Questo dispositivo non è collegato',
+    'in-corso': 'Sincronizzazione in corso…',
+    sincronizzato: 'Sincronizzato',
+    offline: 'Offline',
+    errore: 'Errore di sincronizzazione',
+    ritirato: 'Codice cambiato altrove',
+  };
+  let faseAnnunciata = '';
+  let manuale = false;
+
+  function disegna(i: InfoSync) {
+    pagina.dataset.fase = i.fase;
+    $('[data-stato-testo]').textContent = TESTI[i.fase];
+    let dettaglio = i.messaggio;
+    if (i.fase === 'sincronizzato' && i.ultima) dettaglio = `Ultimo controllo ${ora(i.ultima)}.`;
+    if (i.fase === 'offline') dettaglio = 'I dati sono salvati qui e partono appena torna la rete.';
+    if (i.fase === 'non-collegato' && !i.messaggio) dettaglio = 'La sincronizzazione parte da sola appena salvi qualcosa, oppure collegalo qui sotto.';
+    if (i.fase === 'ritirato') dettaglio = 'Il codice è stato cambiato su un altro dispositivo: ricollega questo con il codice nuovo.';
+    $('[data-stato-dettaglio]').textContent = dettaglio;
+    $('[data-sincronizza]').hidden = !['sincronizzato', 'offline', 'errore', 'in-corso'].includes(i.fase);
+    ($('[data-sincronizza]') as HTMLButtonElement).disabled = i.fase === 'in-corso';
+
+    const codice = codiceAttuale();
+    const attivo = servizioConfigurato() && persistente();
+    pagina.querySelector<HTMLElement>('[data-sezione="altro"]')!.hidden = !attivo || i.fase === 'ritirato';
+    pagina.querySelector<HTMLElement>('[data-sezione="questo"]')!.hidden = !attivo;
+    pagina.querySelector<HTMLElement>('[data-sezione="recupero"]')!.hidden = !codice;
+    pagina.querySelector<HTMLElement>('[data-sezione="scollega"]')!.hidden = !codice;
+    $('[data-ricomincia]').hidden = !(i.fase === 'ritirato' || (i.fase === 'non-collegato' && i.messaggio !== ''));
+    if (!codice) chiudiQr(false);
+
+    // annunci: solo ciò che conta (non "in corso" a ogni controllo)
+    if (i.fase === 'in-corso') return;
+    const chiave = `${i.fase}|${i.messaggio}`;
+    if (manuale && i.fase === 'sincronizzato') annuncia(`Sincronizzato ${i.ultima ? ora(i.ultima) : ''}.`);
+    else if (chiave !== faseAnnunciata && ['offline', 'errore', 'ritirato'].includes(i.fase)) annuncia(`${TESTI[i.fase]}. ${dettaglio}`);
+    manuale = false;
+    faseAnnunciata = chiave;
+  }
+  $('[data-sincronizza]').addEventListener('click', () => {
+    manuale = true;
+    void sincronizza();
+  });
+
+  // ---- QR e link ----
+  const pannello = $('[data-pannello-qr]');
+  const mostra = $<HTMLButtonElement>('[data-mostra-qr]');
+  async function apriQr() {
+    mostra.disabled = true;
+    let codice = codiceAttuale();
+    if (!codice) {
+      annuncia('Attivo la sincronizzazione…');
+      const esito = await attiva();
+      codice = codiceAttuale();
+      if (!esito.ok && !codice) {
+        mostra.disabled = false;
+        annuncia(esito.messaggio);
+        $('[data-stato-dettaglio]').textContent = esito.messaggio;
+        return;
+      }
+    }
+    const link = linkCollegamento(codice!);
+    const { qrSvg } = await import('../../lib/qr.ts');
+    $('[data-qr]').innerHTML = qrSvg(link);
+    $('[data-codice]').textContent = codice!;
+    $('[data-condividi]').hidden = typeof navigator.share !== 'function';
+    pannello.hidden = false;
+    $('[data-altro-chiuso]').hidden = true;
+    mostra.disabled = false;
+    mostra.setAttribute('aria-expanded', 'true');
+    $('[data-nascondi-qr]').focus();
+  }
+  function chiudiQr(focus = true) {
+    if (pannello.hidden) return;
+    pannello.hidden = true;
+    $('[data-qr]').innerHTML = '';
+    $('[data-altro-chiuso]').hidden = false;
+    mostra.setAttribute('aria-expanded', 'false');
+    if (focus) mostra.focus();
+  }
+  mostra.addEventListener('click', () => void apriQr());
+  $('[data-nascondi-qr]').addEventListener('click', () => chiudiQr());
+  $('[data-copia]').addEventListener('click', async () => {
+    const codice = codiceAttuale();
+    if (!codice) return;
+    try {
+      await navigator.clipboard.writeText(linkCollegamento(codice));
+      annuncia('Link copiato.');
+      $('[data-copia]').textContent = 'Copiato ✓';
+      window.setTimeout(() => ($('[data-copia]').textContent = 'Copia il link'), 2000);
+    } catch {
+      annuncia('Non riesco a copiare: usa il QR o scrivi il codice.');
+    }
+  });
+  $('[data-condividi]').addEventListener('click', () => {
+    const codice = codiceAttuale();
+    if (codice) navigator.share({ title: 'minuscole', url: linkCollegamento(codice) }).catch(() => {});
+  });
+
+  // ---- collega questo dispositivo ----
+  const esitoCodice = $('[data-esito-codice]');
+  async function eseguiCollega(testo: string) {
+    esitoCodice.textContent = 'Collegamento in corso…';
+    const esito = await collega(testo);
+    esitoCodice.textContent = esito.messaggio;
+    esitoCodice.classList.toggle('is-errore', !esito.ok);
+    annuncia(esito.messaggio);
+    return esito;
+  }
+  $('[data-modulo-codice]').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const campo = $<HTMLInputElement>('#campo-codice');
+    const esito = await eseguiCollega(campo.value);
+    if (esito.ok) campo.value = '';
+    else campo.focus();
+  });
+  $('[data-nuovo-codice]').addEventListener('click', async () => {
+    const esito = await attiva();
+    annuncia(esito.ok ? 'Sincronizzazione attiva con un codice nuovo. Ricollega gli altri dispositivi.' : esito.messaggio);
+  });
+
+  // ---- arrivo da QR o link: #collega=CODICE ----
+  const daLink = location.hash.startsWith('#collega=') ? leggiCodice(location.hash) : null;
+  if (location.hash.startsWith('#collega=')) {
+    // il codice non resta nell'indirizzo né nella cronologia
+    history.replaceState(history.state, '', location.pathname + location.search);
+    const conferma = $('[data-conferma]');
+    if (!daLink) {
+      esitoCodice.textContent = 'Il link non contiene un codice valido.';
+      esitoCodice.classList.add('is-errore');
+    } else if (daLink === codiceAttuale()) {
+      annuncia('Questo dispositivo è già collegato.');
+    } else {
+      conferma.hidden = false;
+      conferma.focus();
+      $('[data-conferma-si]').addEventListener('click', async () => {
+        conferma.hidden = true;
+        await eseguiCollega(daLink);
+        $('[data-stato-carta]').focus();
+      });
+      $('[data-conferma-no]').addEventListener('click', () => {
+        conferma.hidden = true;
+        $<HTMLElement>('#campo-codice').focus();
+      });
+    }
+  }
+
+  // ---- cartolina di recupero ----
+  $('[data-recupero]').addEventListener('click', async (e) => {
+    const b = e.currentTarget as HTMLButtonElement;
+    const codice = codiceAttuale();
+    if (!codice) return;
+    b.disabled = true;
+    try {
+      const { scaricaRecupero } = await import('../../lib/cartolina-recupero.ts');
+      await scaricaRecupero(codice, linkCollegamento(codice));
+      annuncia('Cartolina di recupero scaricata.');
+    } catch {
+      annuncia('Non riesco a creare la cartolina. Riprova.');
+    } finally {
+      b.disabled = false;
+    }
+  });
+
+  // ---- copia di sicurezza ----
+  const esitoCopia = $('[data-esito-copia]');
+  $('[data-esporta]').addEventListener('click', () => {
+    esporta();
+    esitoCopia.classList.remove('is-errore');
+    esitoCopia.textContent = 'File esportato: lo trovi tra i download.';
+  });
+  $('[data-importa]').addEventListener('change', async (e) => {
+    const input = e.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    try {
+      const r = await importaFile(file);
+      esitoCopia.classList.remove('is-errore');
+      esitoCopia.textContent = r.invariato
+        ? 'Niente di nuovo: tutto quello che c\'è nel file è già qui.'
+        : `File importato e unito: ${r.cambiati === 1 ? '1 giorno aggiunto o cambiato' : `${r.cambiati} giorni aggiunti o cambiati`}.`;
+    } catch (err) {
+      esitoCopia.classList.add('is-errore');
+      esitoCopia.textContent = (err as Error).message;
+    }
+  });
+
+  // ---- scollega / cambia codice (con conferma) ----
+  const domanda = $<HTMLDialogElement>('[data-domanda]');
+  const DOMANDE = {
+    scollega: {
+      titolo: 'Scollegare questo dispositivo?',
+      testo: 'Smette di sincronizzare e dimentica il codice. I dati restano qui; potrai ricollegarlo con il QR o la cartolina di recupero.',
+      si: 'Scollega',
+      azione: scollega,
+    },
+    cambia: {
+      titolo: 'Cambiare codice?',
+      testo: 'Il codice vecchio smette di funzionare: tutti gli altri dispositivi vanno ricollegati e la cartolina di recupero va ristampata. Questo dispositivo resta collegato.',
+      si: 'Cambia codice',
+      azione: cambiaCodice,
+    },
+  };
+  let chiesto: HTMLElement | null = null;
+  pagina.querySelectorAll<HTMLButtonElement>('[data-chiedi]').forEach((b) => b.addEventListener('click', () => {
+    const d = DOMANDE[b.dataset.chiedi as keyof typeof DOMANDE];
+    chiesto = b;
+    domanda.dataset.azione = b.dataset.chiedi;
+    $('[data-domanda-titolo]').textContent = d.titolo;
+    $('[data-domanda-testo]').textContent = d.testo;
+    $('[data-domanda-si]').textContent = d.si;
+    domanda.showModal();
+  }));
+  domanda.addEventListener('close', async () => {
+    const d = DOMANDE[domanda.dataset.azione as keyof typeof DOMANDE];
+    if (domanda.returnValue === 'si' && d) {
+      chiudiQr(false);
+      const esito = await d.azione();
+      annuncia(esito.messaggio);
+      $('[data-stato-dettaglio]').textContent = esito.messaggio;
+    }
+    domanda.returnValue = '';
+    (chiesto && !chiesto.closest('[hidden]') ? chiesto : $<HTMLElement>('#campo-codice')).focus();
+  });
+
+  // in fondo: `disegna` usa elementi e funzioni dichiarati sopra
+  osservaSync(disegna);
+</script>
+
+<style>
+  .disp {
+    position: relative;
+    min-height: max(100dvh, calc(1200 * var(--u)));
+    padding: calc(130 * var(--u)) calc(40 * var(--u)) calc(80 * var(--u));
+    background: linear-gradient(90deg, #e8cfc4 0%, #fbf4f0 9%, #f4e5dc 40%, #e9d3c4 100%);
+    font-size: max(14px, calc(30 * var(--u)));
+    line-height: 1.4;
+  }
+  .disp__indietro {
+    position: absolute;
+    top: calc(40 * var(--u));
+    left: calc(40 * var(--u));
+    color: var(--bordeaux);
+    font-weight: 700;
+    font-size: max(13px, calc(30 * var(--u)));
+    text-decoration: none;
+  }
+  .disp__titolo {
+    margin: 0 0 calc(12 * var(--u));
+    font-family: var(--font-titolo);
+    font-style: italic;
+    font-weight: 400;
+    font-size: max(30px, calc(84 * var(--u)));
+    line-height: 1.1;
+    color: var(--bordeaux);
+  }
+  .disp__intro { margin: 0 0 calc(30 * var(--u)); color: #5f5858; }
+
+  .carta {
+    margin: 0 0 calc(26 * var(--u));
+    padding: calc(28 * var(--u)) calc(32 * var(--u));
+    border-radius: 14px;
+    background: rgb(255 255 255 / 0.62);
+    box-shadow: 0 1px 0 rgb(111 33 28 / 0.08);
+  }
+  .carta[hidden], .disp [hidden] { display: none; }
+  .carta h2 {
+    margin: 0 0 0.35em;
+    font-family: var(--font-titolo);
+    font-weight: 400;
+    font-size: max(18px, calc(40 * var(--u)));
+    color: var(--bordeaux);
+  }
+  .carta p { margin: 0 0 0.8em; }
+  .carta--conferma { border: 2px solid var(--bordeaux); background: #fff; }
+  .carta--conferma:focus, .carta--stato:focus { outline: none; }
+
+  /* Stato: una spia piccola + testo (colore E parola, non solo colore) */
+  .stato { display: flex; align-items: center; gap: 0.5em; margin: 0; font-weight: 700; color: var(--bordeaux); }
+  .stato__spia {
+    flex: none;
+    width: 0.7em;
+    height: 0.7em;
+    border-radius: 50%;
+    background: var(--grigio-testo);
+  }
+  [data-fase='sincronizzato'] .stato__spia { background: #4f7a52; }
+  [data-fase='in-corso'] .stato__spia { background: var(--senape); animation: pulsa 1.2s ease-in-out infinite; }
+  [data-fase='offline'] .stato__spia { background: var(--senape); }
+  [data-fase='errore'] .stato__spia,
+  [data-fase='ritirato'] .stato__spia { background: var(--rosso); }
+  @keyframes pulsa { 50% { opacity: 0.35; } }
+  @media (prefers-reduced-motion: reduce) {
+    [data-fase='in-corso'] .stato__spia { animation: none; }
+  }
+  .stato__dettaglio { margin: 0.3em 0 0.6em; color: #5f5858; font-size: 0.92em; }
+  .stato__dettaglio:empty { display: none; }
+
+  .riga { display: flex; flex-wrap: wrap; gap: 10px; }
+  .bottone {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.45em 1.1em;
+    border: 2px solid var(--bordeaux);
+    border-radius: 999px;
+    background: var(--bordeaux);
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .bottone--secondario { background: #fff; color: var(--bordeaux); }
+  .bottone:disabled { opacity: 0.55; cursor: progress; }
+  .carta > .bottone + p { margin-top: 1.2em; }
+  /* "Importa": l'input file è dentro l'etichetta, invisibile ma raggiungibile da tastiera */
+  .bottone--file { position: relative; }
+  .bottone--file input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .bottone--file:focus-within { outline: 2px solid var(--bordeaux); outline-offset: 3px; }
+
+  .qr__immagine {
+    width: min(100%, max(200px, calc(470 * var(--u))));
+    margin: 0 auto 0.8em;
+    line-height: 0;
+  }
+  .qr__immagine :global(svg) { display: block; width: 100%; height: auto; border-radius: 8px; }
+  .qr__avviso { font-size: 0.9em; color: var(--bordeaux); text-align: center; }
+  .qr__codice { text-align: center; }
+  .qr__codice code, .modulo input {
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .qr__codice code { color: var(--bordeaux); word-break: break-all; }
+  .qr .riga { justify-content: center; }
+
+  .modulo { display: grid; gap: 8px; margin-bottom: 0.6em; }
+  .modulo label { font-size: 0.92em; }
+  .modulo input {
+    min-height: 44px;
+    padding: 0.3em 0.6em;
+    border: 2px solid #b7a6a1;
+    border-radius: 10px;
+    background: #fff;
+    font-size: max(15px, calc(30 * var(--u)));
+    text-transform: uppercase;
+  }
+  .modulo input::placeholder { color: #b2a8a6; }
+  .modulo .bottone { justify-self: start; }
+  .modulo__esito { min-height: 1.4em; margin: 0.3em 0 0; font-weight: 700; color: #3f5f41; }
+  .modulo__esito:empty { display: none; }
+  .modulo__esito.is-errore { color: var(--rosso); }
+
+  .domanda {
+    max-width: min(90vw, 380px);
+    padding: 20px;
+    border: none;
+    border-radius: 16px;
+    background: #fff;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+  .domanda::backdrop { background: rgb(34 31 32 / 0.45); }
+  .domanda h2 { margin: 0 0 0.4em; font-family: var(--font-titolo); font-weight: 400; font-size: 21px; color: var(--bordeaux); }
+  .domanda .bottone { font-size: 15px; }
+
+  .disp a:focus-visible,
+  .disp button:focus-visible,
+  .disp input:focus-visible {
+    outline: 2px solid var(--bordeaux);
+    outline-offset: 3px;
+  }
+</style>
