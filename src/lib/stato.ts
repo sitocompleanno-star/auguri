@@ -7,12 +7,18 @@
 //     preferitiModificato: "2026-...Z",        // serve all'unione tra dispositivi (Fase 6)
 //     cartoline: {                             // Fase 5
 //       fiore: { francobolli: [{ id: "realizzata", x: 0.8, y: 0.2, r: -6 }], modificato: "2026-...Z" }
-//     }
+//     },
+//     premi: { memory: { quando: "2026-...Z" } },              // Fase 8: francobolli vinti nei giochi
+//     record: { "memory-facile": { mosse: 9, quando: "2026-...Z" } }  // Fase 8: miglior partita per gioco/livello
 //   }
 //
 // - `emozione: null` = giorno cancellato. Si tiene la voce (con la sua data di modifica) invece di toglierla,
 //   così in Fase 6, unendo due dispositivi, la cancellazione "vince" se è più recente.
-// - I francobolli sbloccati NON si salvano: si calcolano dai giorni (`sbloccati`).
+// - I francobolli sbloccati NON si salvano: si calcolano dai giorni (`sbloccati`), più i premi dei giochi.
+// - Premi (Fase 8): un francobollo vinto in un gioco resta per sempre (non dipende dai giorni del Diario).
+//   Nell'unione vince la data più vecchia (la prima vittoria); un premio non si toglie mai.
+// - Record (Fase 8): per ogni chiave "<gioco>-<livello>" la partita con meno mosse (a parità, la più vecchia).
+// - `premi` e `record` sono campi in più compatibili con gli stati vecchi (mancano = vuoti): la versione resta 1.
 // - Le funzioni sul dato sono pure (prendono uno stato e ne restituiscono uno nuovo); solo `leggi`/`scrivi`
 //   toccano localStorage, sempre dentro try/catch (può essere bloccato, es. Safari in privato o cookie off).
 //   Se non si può salvare, il sito continua a funzionare con una copia in memoria (`persistente()` = false).
@@ -46,20 +52,32 @@ export interface Cartolina {
   modificato: string;                  // ISO: vince la più recente nell'unione (Fase 6)
 }
 
+export interface Premio {
+  quando: string; // ISO: prima vittoria
+}
+
+export interface Record_ {
+  mosse: number;  // intero >= 1
+  quando: string; // ISO
+}
+
 export interface Stato {
   versione: number;
   giorni: Record<string, Giorno>;
   preferiti: string[];
   preferitiModificato: string;
   cartoline: Record<string, Cartolina>;
+  premi: Record<string, Premio>;   // Fase 8
+  record: Record<string, Record_>; // Fase 8
 }
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
 const ID_CARTOLINA = /^[a-z0-9-]{1,40}$/;
+const ID_PREMIO = /^[a-z0-9-]{1,40}$/; // id del francobollo speciale, o chiave "<gioco>-<livello>" del record
 const ZERO = '1970-01-01T00:00:00.000Z';
 
 export function statoVuoto(): Stato {
-  return { versione: VERSIONE, giorni: {}, preferiti: [], preferitiModificato: ZERO, cartoline: {} };
+  return { versione: VERSIONE, giorni: {}, preferiti: [], preferitiModificato: ZERO, cartoline: {}, premi: {}, record: {} };
 }
 
 function isoValida(v: unknown): v is string {
@@ -93,6 +111,21 @@ export function migra(grezzo: unknown): Stato {
     for (const [id, v] of Object.entries(g.cartoline as Record<string, unknown>)) {
       const c = cartolinaValida(v);
       if (ID_CARTOLINA.test(id) && c) s.cartoline[id] = c;
+    }
+  }
+  // Fase 8: senza `premi` / `record` (stati fino alla Fase 6) restano vuoti.
+  if (g.premi && typeof g.premi === 'object' && !Array.isArray(g.premi)) {
+    for (const [id, v] of Object.entries(g.premi as Record<string, unknown>)) {
+      const quando = v && typeof v === 'object' ? (v as Record<string, unknown>).quando : undefined;
+      if (ID_PREMIO.test(id)) s.premi[id] = { quando: isoValida(quando) ? quando : ZERO };
+    }
+  }
+  if (g.record && typeof g.record === 'object' && !Array.isArray(g.record)) {
+    for (const [id, v] of Object.entries(g.record as Record<string, unknown>)) {
+      if (!ID_PREMIO.test(id) || !v || typeof v !== 'object') continue;
+      const { mosse, quando } = v as Record<string, unknown>;
+      if (!numero(mosse) || mosse < 1) continue;
+      s.record[id] = { mosse: Math.round(mosse), quando: isoValida(quando) ? quando : ZERO };
     }
   }
   return s;
@@ -137,14 +170,48 @@ export function impostaGiorno(s: Stato, data: string, emozione: string | null, q
   return pulisciCartoline({ ...s, giorni: { ...s.giorni, [data]: { emozione, modificato: quando } } }, quando);
 }
 
-/** Emozioni sbloccate (id), con il primo giorno in cui sono comparse. Ordine: dalla più vecchia. */
+/**
+ * Francobolli sbloccati (id), con il primo giorno in cui sono comparsi: le emozioni dei giorni del Diario e,
+ * dalla Fase 8, i premi dei giochi (giorno della vittoria, fuso Europe/Rome). Ordine: dal più vecchio; nello
+ * stesso giorno prima quelli del Diario.
+ */
 export function sbloccati(s: Stato): Map<string, string> {
-  const m = new Map<string, string>();
+  const voci: [string, string][] = [];
+  const visti = new Set<string>();
   for (const data of Object.keys(s.giorni).sort()) {
     const e = s.giorni[data].emozione;
-    if (e && !m.has(e)) m.set(e, data);
+    if (e && !visti.has(e)) { visti.add(e); voci.push([e, data]); }
   }
-  return m;
+  const premi = Object.entries(s.premi ?? {})
+    .filter(([id]) => !visti.has(id))
+    .sort(([x, a], [y, b]) => Date.parse(a.quando) - Date.parse(b.quando) || (x < y ? -1 : 1))
+    .map(([id, p]): [string, string] => [id, dataDiOggi(new Date(p.quando))]);
+  for (const p of premi) {
+    let i = voci.length;
+    while (i > 0 && voci[i - 1][1] > p[1]) i--; // dopo tutto ciò che è dello stesso giorno o prima
+    voci.splice(i, 0, p);
+  }
+  return new Map(voci);
+}
+
+// ---- Premi e record dei giochi (Fase 8) ----
+
+/** Chiave del record di un gioco a un livello, es. "memory-facile". */
+export const chiaveRecord = (gioco: string, livello: string) => `${gioco}-${livello}`;
+
+/**
+ * Registra una vittoria: il francobollo `premio` si sblocca (se non c'era già: la prima vittoria resta) e il
+ * record del livello si aggiorna se le mosse sono meno. Non tocca i giorni né le cartoline.
+ */
+export function registraVittoria(
+  s: Stato, premio: string, chiave: string, mosse: number, quando = adesso(),
+): Stato {
+  if (!ID_PREMIO.test(premio) || !ID_PREMIO.test(chiave)) throw new Error(`Premio non valido: ${premio}`);
+  const premi = s.premi[premio] ? s.premi : { ...s.premi, [premio]: { quando } };
+  const vecchio = s.record[chiave];
+  const m = Math.max(1, Math.round(mosse));
+  const record = vecchio && vecchio.mosse <= m ? s.record : { ...s.record, [chiave]: { mosse: m, quando } };
+  return premi === s.premi && record === s.record ? s : { ...s, premi, record };
 }
 
 /** Quante volte è stata scelta ogni emozione. */
@@ -239,12 +306,26 @@ export function unisci(a: Stato, b: Stato): Stato {
     const x = cartoline[id];
     if (!x || Date.parse(c.modificato) > Date.parse(x.modificato)) cartoline[id] = c;
   }
+  // Fase 8: premi = unione (data più vecchia); record = meno mosse, a parità il più vecchio.
+  // Entrambe le regole sono un "minimo" con un ordine totale: l'ordine e le ripetizioni non contano.
+  const premi: Record<string, Premio> = { ...a.premi };
+  for (const [id, p] of Object.entries(b.premi ?? {})) {
+    const x = premi[id];
+    if (!x || Date.parse(p.quando) < Date.parse(x.quando)) premi[id] = p;
+  }
+  const record: Record<string, Record_> = { ...a.record };
+  for (const [id, r] of Object.entries(b.record ?? {})) {
+    const x = record[id];
+    if (!x || r.mosse < x.mosse || (r.mosse === x.mosse && Date.parse(r.quando) < Date.parse(x.quando))) record[id] = r;
+  }
   return pulisciCartoline({
     versione: VERSIONE,
     giorni,
     preferiti: [...recente.preferiti],
     preferitiModificato: recente.preferitiModificato,
     cartoline,
+    premi,
+    record,
   });
 }
 
@@ -265,9 +346,10 @@ export function canonico(s: Stato): string {
 
 export const uguali = (a: Stato, b: Stato) => canonico(a) === canonico(b);
 
-/** true se lo stato non contiene ancora niente (nessun giorno, preferito o cartolina): non c'è nulla da sincronizzare. */
+/** true se lo stato non contiene ancora niente (nessun giorno, preferito, cartolina, premio o record): non c'è nulla da sincronizzare. */
 export function senzaDati(s: Stato): boolean {
-  return Object.keys(s.giorni).length === 0 && s.preferiti.length === 0 && Object.keys(s.cartoline).length === 0;
+  return Object.keys(s.giorni).length === 0 && s.preferiti.length === 0 && Object.keys(s.cartoline).length === 0
+    && Object.keys(s.premi ?? {}).length === 0 && Object.keys(s.record ?? {}).length === 0;
 }
 
 /** Data di oggi "AAAA-MM-GG" nel fuso Europe/Rome (non quello del dispositivo). */

@@ -57,15 +57,17 @@ Il codice segreto viene generato sul dispositivo dell'utente al primo salvataggi
 - Pagina `/dispositivi/` (link in fondo a Francobolli): QR/link, codice, cartolina di recupero (PDF), copia di sicurezza, scollega / cambia codice.
 
 ### Fase 7 · Foto e frase del giorno (rimandata)
-Rimandata: mancano foto e frasi. Se mancano ancora, si anticipa la Fase 8 (prompt in `fasi/fase-6/PROMPT_FASE_7.md`). Dati in `src/data/foto.json` e `frasi.json`; scelta deterministica dalla data (stessa foto/frase per tutto il giorno). Foto in `public/media/foto/`, già compresse (vedi "Gestione dei media"). Prompt già pronto in `fasi/fase-2/PROMPT_FOTO_FRASE.md`.
+Rimandata: mancano foto e frasi. La Fase 8 è stata anticipata (2026-11-13); quando arrivano i contenuti si usa `fasi/fase-2/PROMPT_FOTO_FRASE.md` (vedi `fasi/fase-8/PROMPT_FASE_9.md`). Dati in `src/data/foto.json` e `frasi.json`; scelta deterministica dalla data (stessa foto/frase per tutto il giorno). Foto in `public/media/foto/`, già compresse (vedi "Gestione dei media"). Prompt già pronto in `fasi/fase-2/PROMPT_FOTO_FRASE.md`.
 **Fatto quando:** foto e frase cambiano ogni giorno senza backend e il peso di `dist/` è sotto controllo.
 
-### Fase 8 · Primo gioco (memory)
+### Fase 8 · Primo gioco (memory) ✅
 Gioco memory a carte, collegato al primo pulsante; vittoria che sblocca un francobollo (si aggiunge ai francobolli del Diario).
-**Fatto quando:** si gioca, si vince, si ottiene il francobollo.
+**Fatto quando:** si gioca, si vince, si ottiene il francobollo. ✅ (2026-11-13; anticipata rispetto alla Fase 7; provata anche la sincronizzazione del premio tra due browser con il servizio locale)
+- Pagina `/giochi/memory/` dal cuore della home; carte con 8 simboli semplici in SVG; Facile (6 coppie) / Difficile (8); mosse e record per livello.
+- La prima vittoria sblocca il francobollo speciale **Memory** (cuore + M), fuori dalla ruota; nello stato in `premi`, record in `record`.
 
 ### Fase 9 · Altri giochi e Luna Park
-Quiz, puzzle, ecc., uno per volta. Luna Park (ruota della fortuna con tre pulsanti CASO / LOVE / COSE, dal PDF `Francobolli_e_luna_park.pdf`) si sviluppa più avanti, quando le fasi precedenti sono chiuse.
+Quiz, puzzle, ecc., uno per volta (prossimo: pulsante dei fiori; prompt in `fasi/fase-8/PROMPT_FASE_9.md`). Ogni gioco dà un francobollo speciale alla prima vittoria. Luna Park (ruota della fortuna con tre pulsanti CASO / LOVE / COSE, dal PDF `Francobolli_e_luna_park.pdf`) si sviluppa più avanti, quando le fasi precedenti sono chiuse.
 
 ### Fase 10 · Altre pagine interne
 Archivio, Club degli Amici, Caos: contenuti, nell'ordine da decidere.
@@ -128,6 +130,14 @@ Decisione: **solo GitHub**, nessun servizio esterno per i file; i video vanno su
 - Scollegare: "Scollega questo dispositivo" (i dati restano) e "Cambia codice" (il vecchio viene ritirato, gli altri dispositivi vanno ricollegati).
 - Comandi in una pagina dedicata `/dispositivi/`, raggiunta dal link in fondo alla pagina Francobolli; stato breve solo lì accanto al link.
 
+## Decisioni prese per i giochi (Fase 8)
+
+- Memory con simboli semplici (non i francobolli), due livelli a scelta, si contano le mosse (niente tempo).
+- Ogni gioco dà un francobollo **speciale**, fuori dalla ruota, **una volta sola** (prima vittoria); dopo resta il record.
+- I premi non dipendono dal Diario: cambiare o cancellare un giorno non li toglie. Nell'unione vince la prima vittoria; per i record vincono meno mosse.
+- Il francobollo speciale dice da dove viene nel suo dettaglio ("Vinto giocando a Memory").
+- Percorsi dei giochi: `/giochi/<nome>/`.
+
 ## Da decidere
 - Conferma dell'elenco delle emozioni (3 livelli, proposta provvisoria in `src/data/emozioni.ts`) e della palette per famiglia
 - Grafica dei francobolli (placeholder fino ad allora); cartoline e portafoglio definitivi dall'artista (oggi estratti dal mockup)
@@ -135,4 +145,5 @@ Decisione: **solo GitHub**, nessun servizio esterno per i file; i video vanno su
 - Nome del repository GitHub (influisce sul `base` di Astro)
 - Quando pubblicare il Worker di Cloudflare (Fase 6: serve solo l'account di William)
 - Ordine delle pagine interne (Fase 10)
-- Quando sostituire i placeholder con gli SVG definitivi
+- Quando sostituire i placeholder con gli SVG definitivi (anche il francobollo Memory e le carte del memory)
+- Quali giochi per fiori, arcobaleno e sole (Fase 9)

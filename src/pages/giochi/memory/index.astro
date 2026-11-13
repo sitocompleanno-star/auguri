@@ -1,0 +1,553 @@
+---
+// Memory (Fase 8): primo gioco, collegato al primo pulsante della home (cuore).
+// Carte con simboli semplici (src/data/memory.ts), due livelli (Facile 6 coppie, Difficile 8), si contano le
+// mosse e si tiene il record per livello. La prima vittoria sblocca il francobollo speciale "Memory", che
+// compare nella collezione (griglia, preferiti, cartoline) e arriva agli altri dispositivi con la Fase 6.
+// La logica della partita è pura in src/lib/memory.ts; qui c'è solo il disegno e l'interazione.
+import Base from '../../../layouts/Base.astro';
+import { emozione } from '../../../data/emozioni.ts';
+import { FONDO_CARTA, livelliMemory, simboliMemory } from '../../../data/memory.ts';
+import { controllaRuota, francobolliDefinitivi } from '../../../lib/francobolli-definitivi.ts';
+import { percorsoFrancobollo } from '../../../lib/francobolli.ts';
+import { contrasto } from '../../../data/emozioni.ts';
+import { PREMIO_MEMORY } from '../../../data/memory.ts';
+
+controllaRuota();
+// controlli al build: simboli diversi e abbastanza contrastati sul fondo della carta
+for (const s of simboliMemory) {
+  if (contrasto(s.colore, FONDO_CARTA) < 3) throw new Error(`Memory: simbolo ${s.nome} poco contrastato`);
+}
+if (new Set(simboliMemory.map((s) => s.id)).size !== simboliMemory.length) throw new Error('Memory: simboli ripetuti');
+for (const l of livelliMemory) if (l.coppie > simboliMemory.length) throw new Error(`Memory: mancano simboli per ${l.nome}`);
+
+const premio = emozione(PREMIO_MEMORY);
+if (!premio) throw new Error('Memory: manca il francobollo speciale in src/data/emozioni.ts');
+
+const base = import.meta.env.BASE_URL;
+const definitivi = new Set(francobolliDefinitivi());
+const srcPremio = `${base}${percorsoFrancobollo(premio, definitivi)}`;
+const [primo] = livelliMemory;
+---
+<Base titolo="Memory · minuscole">
+  <main class="mem" data-memory>
+    <a class="mem__indietro" href={base}>← torna alla home</a>
+
+    <header class="mem__testa">
+      <h1 class="mem__titolo">Memory</h1>
+      <p class="mem__sotto">Trova tutte le coppie di carte uguali.</p>
+    </header>
+
+    <div class="mem__livelli" role="group" aria-label="Difficoltà">
+      {livelliMemory.map((l) => (
+        <button type="button" class="mem__livello" data-livello={l.id} aria-pressed={String(l.id === primo.id)}>
+          {l.nome} <span class="mem__livello-n">· {l.coppie} coppie</span>
+        </button>
+      ))}
+    </div>
+
+    <p class="mem__conta">
+      <span>Mosse <strong data-mosse>0</strong></span>
+      <span>Coppie <strong data-coppie>0</strong>/<span data-totale>{primo.coppie}</span></span>
+      <span>Record <strong data-record>–</strong></span>
+    </p>
+
+    <div class="mem__griglia" role="grid" aria-label="Carte del memory" aria-describedby="mem-aiuto" data-griglia
+      style={`--colonne:${primo.colonne}`}></div>
+    <noscript><p class="mem__messaggio">Per giocare serve JavaScript.</p></noscript>
+
+    <p class="mem__messaggio" role="status" data-messaggio></p>
+
+    <div class="mem__piede">
+      <button type="button" class="mem__bottone" data-nuova>Nuova partita</button>
+      <p class="mem__premio-stato" data-premio-stato hidden>
+        <img src={srcPremio} alt="" width="45.44" height="58.1" />
+        <span>Francobollo <strong>{premio.nome}</strong> già vinto</span>
+      </p>
+    </div>
+    <p class="mem__aiuto" id="mem-aiuto">Da tastiera: frecce per spostarti tra le carte, Invio o Spazio per girarle.</p>
+
+    <dialog class="vittoria" data-vittoria aria-labelledby="vittoria-titolo">
+      <h2 id="vittoria-titolo" class="vittoria__titolo" tabindex="-1">Hai vinto!</h2>
+      <p class="vittoria__mosse" data-v-mosse></p>
+      <p class="vittoria__record" data-v-record hidden>Nuovo record!</p>
+      <div class="vittoria__premio" data-v-premio hidden>
+        <img class="vittoria__francobollo" src={srcPremio} alt={`Francobollo ${premio.nome}`} width="45.44" height="58.1" />
+        <p><strong>Nuovo francobollo: {premio.nome}!</strong><br />
+          Lo trovi nella collezione: puoi metterlo nella home o attaccarlo a una cartolina.</p>
+      </div>
+      <div class="vittoria__bottoni">
+        <button type="button" class="mem__bottone" data-v-ancora>Gioca ancora</button>
+        <a class="mem__bottone mem__bottone--secondario" href={`${base}francobolli/`}>Vai ai francobolli</a>
+      </div>
+    </dialog>
+  </main>
+</Base>
+
+<script>
+  import { aggiorna, chiaveRecord, leggi, osserva, registraVittoria, type Stato } from '../../../lib/stato.ts';
+  import {
+    ATTESA_ERRORE_MS, FONDO_CARTA, GIOCO_MEMORY, PREMIO_MEMORY, livelliMemory, simboliMemory, type LivelloMemory,
+  } from '../../../data/memory.ts';
+  import { copri, gira, muovi, nuovaPartita, statoCarta, type Partita } from '../../../lib/memory.ts';
+
+  const radice = document.querySelector<HTMLElement>('[data-memory]')!;
+  const $ = <T extends Element = HTMLElement>(sel: string, el: ParentNode = radice) => el.querySelector<T>(sel)!;
+  const griglia = $('[data-griglia]');
+  const messaggio = $('[data-messaggio]');
+  const dialogo = $<HTMLDialogElement>('[data-vittoria]');
+  const riduci = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const simbolo = new Map(simboliMemory.map((s) => [s.id, s]));
+  const CHIAVE_LIVELLO = 'minuscole:memory-livello'; // solo preferenza locale, non sincronizzata
+
+  // Dorso delle carte: bordeaux con cornice crema e una zampina (come le zampe della home)
+  const DORSO = `<svg class="carta__svg" viewBox="0 0 60 72" aria-hidden="true">
+    <rect x="1" y="1" width="58" height="70" rx="6" fill="#6f211c"/>
+    <rect x="5" y="5" width="50" height="62" rx="3.5" fill="none" stroke="#e7c5a4" stroke-width="1.2" stroke-dasharray="2.2 2"/>
+    <g fill="#e7c5a4" transform="translate(30 37)">
+      <ellipse cx="0" cy="4.2" rx="6.6" ry="5.4"/>
+      <ellipse cx="-7.6" cy="-3" rx="2.5" ry="3.1" transform="rotate(-20 -7.6 -3)"/>
+      <ellipse cx="-2.7" cy="-7.4" rx="2.5" ry="3.2" transform="rotate(-6 -2.7 -7.4)"/>
+      <ellipse cx="2.7" cy="-7.4" rx="2.5" ry="3.2" transform="rotate(6 2.7 -7.4)"/>
+      <ellipse cx="7.6" cy="-3" rx="2.5" ry="3.1" transform="rotate(20 7.6 -3)"/>
+    </g>
+  </svg>`;
+  const fronte = (id: string) => {
+    const s = simbolo.get(id)!;
+    return `<svg class="carta__svg" viewBox="0 0 60 72" aria-hidden="true">
+      <rect x="1.2" y="1.2" width="57.6" height="69.6" rx="6" fill="${FONDO_CARTA}" stroke="${s.colore}" stroke-width="2.4"/>
+      <g transform="translate(30 36) scale(1.9)" color="${s.colore}">${s.svg}</g>
+    </svg>`;
+  };
+
+  // ---- Stato della pagina ----
+  let livello: LivelloMemory = livelliMemory[0];
+  let partita: Partita;
+  let bottoni: HTMLButtonElement[] = [];
+  let attivo = 0;      // carta con tabindex 0 (focus "itinerante" nella griglia)
+  let timer = 0;       // rigira le carte sbagliate
+  let salvata = false; // vittoria già registrata per questa partita
+  let stato: Stato = leggi();
+
+  try {
+    const l = livelliMemory.find((x) => x.id === localStorage.getItem(CHIAVE_LIVELLO));
+    if (l) livello = l;
+  } catch { /* localStorage bloccato: si parte da Facile */ }
+
+  /** Annuncio per gli screen reader (e visibile): svuota e riscrive, così anche un testo uguale viene letto. */
+  let timerMsg = 0;
+  function annuncia(t: string) {
+    messaggio.textContent = '';
+    window.clearTimeout(timerMsg);
+    timerMsg = window.setTimeout(() => (messaggio.textContent = t), 40);
+  }
+
+  const nomeCarta = (i: number) => {
+    const st = statoCarta(partita, i);
+    if (st === 'coperta') return `Carta ${i + 1}, coperta`;
+    const n = simbolo.get(partita.carte[i])!.nome;
+    return st === 'trovata' ? `Carta ${i + 1}, ${n}, trovata` : `Carta ${i + 1}, ${n}`;
+  };
+
+  // ---- Disegno ----
+  function costruisci() {
+    griglia.innerHTML = '';
+    griglia.style.setProperty('--colonne', String(livello.colonne));
+    griglia.setAttribute('aria-rowcount', String(Math.ceil(partita.carte.length / livello.colonne)));
+    bottoni = [];
+    let riga: HTMLElement | null = null;
+    partita.carte.forEach((id, i) => {
+      if (i % livello.colonne === 0) {
+        riga = document.createElement('div');
+        riga.setAttribute('role', 'row');
+        riga.className = 'mem__riga';
+        griglia.append(riga);
+      }
+      const cella = document.createElement('div');
+      cella.setAttribute('role', 'gridcell');
+      cella.className = 'mem__cella';
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'carta';
+      b.dataset.i = String(i);
+      b.innerHTML = `<span class="carta__giro"><span class="carta__faccia carta__dorso">${DORSO}</span>` +
+        `<span class="carta__faccia carta__fronte">${fronte(id)}<span class="carta__ok" aria-hidden="true">✓</span></span></span>`;
+      cella.append(b);
+      riga!.append(cella);
+      bottoni.push(b);
+    });
+    attivo = 0;
+    disegna();
+  }
+
+  function disegna() {
+    bottoni.forEach((b, i) => {
+      const st = statoCarta(partita, i);
+      if (b.dataset.stato !== st) b.dataset.stato = st;
+      b.setAttribute('aria-label', nomeCarta(i));
+      b.tabIndex = i === attivo ? 0 : -1;
+      // le trovate restano raggiungibili con le frecce, ma non si possono più girare
+      b.setAttribute('aria-disabled', String(st === 'trovata'));
+    });
+    $('[data-mosse]').textContent = String(partita.mosse);
+    $('[data-coppie]').textContent = String(partita.coppieTrovate);
+    $('[data-totale]').textContent = String(partita.coppie);
+    disegnaRecord();
+  }
+
+  function disegnaRecord() {
+    const r = stato.record[chiaveRecord(GIOCO_MEMORY, livello.id)];
+    $('[data-record]').textContent = r ? String(r.mosse) : '–';
+    $('[data-premio-stato]').hidden = !stato.premi[PREMIO_MEMORY];
+  }
+
+  function avvia(focus = false) {
+    window.clearTimeout(timer);
+    salvata = false;
+    partita = nuovaPartita(simboliMemory.map((s) => s.id), livello.coppie);
+    for (const b of radice.querySelectorAll<HTMLButtonElement>('[data-livello]')) {
+      b.setAttribute('aria-pressed', String(b.dataset.livello === livello.id));
+    }
+    costruisci();
+    if (focus) bottoni[0]?.focus();
+  }
+
+  // ---- Gioco ----
+  function tocca(i: number) {
+    window.clearTimeout(timer);
+    const prima = partita;
+    const { partita: p, esito } = gira(partita, i);
+    partita = p;
+    attivo = i;
+    disegna();
+    const nome = (k: number) => simbolo.get(partita.carte[k])!.nome;
+    switch (esito.tipo) {
+      case 'niente':
+        if (prima !== p) return; // ha solo rigirato due carte sbagliate
+        if (partita.trovate[i]) annuncia(`${nome(i)}: coppia già trovata.`);
+        return;
+      case 'prima':
+        annuncia(`${nome(i)}.`);
+        return;
+      case 'coppia':
+        if (esito.vinto) return vittoria();
+        annuncia(`${nome(i)}: coppia trovata! ${partita.coppieTrovate} su ${partita.coppie}.`);
+        return;
+      case 'sbagliata': {
+        const [a, b] = esito.carte;
+        annuncia(`${nome(a)} e ${nome(b)}: non sono uguali.`);
+        for (const k of esito.carte) {
+          bottoni[k].classList.remove('is-sbagliata');
+          void bottoni[k].offsetWidth; // riavvia l'animazione
+          bottoni[k].classList.add('is-sbagliata');
+        }
+        timer = window.setTimeout(() => { partita = copri(partita); disegna(); }, ATTESA_ERRORE_MS);
+        return;
+      }
+    }
+  }
+
+  function vittoria() {
+    if (salvata) return;
+    salvata = true;
+    const chiave = chiaveRecord(GIOCO_MEMORY, livello.id);
+    const prima = leggi();
+    const nuovoPremio = !prima.premi[PREMIO_MEMORY];
+    const recordPrima = prima.record[chiave]?.mosse;
+    const nuovoRecord = recordPrima !== undefined && partita.mosse < recordPrima;
+    // salva (premio + record); la sincronizzazione (Fase 6) parte da sola dopo scrivi()
+    aggiorna((s) => registraVittoria(s, PREMIO_MEMORY, chiave, partita.mosse));
+
+    const m = `${partita.mosse} ${partita.mosse === 1 ? 'mossa' : 'mosse'}`;
+    $('[data-v-mosse]', dialogo).textContent =
+      `${livello.nome}: tutte le ${partita.coppie} coppie in ${m}.` + (recordPrima !== undefined && !nuovoRecord ? ` Record: ${recordPrima}.` : '');
+    $('[data-v-record]', dialogo).hidden = !nuovoRecord;
+    $('[data-v-premio]', dialogo).hidden = !nuovoPremio;
+    annuncia(`Hai vinto in ${m}!${nuovoRecord ? ' Nuovo record!' : ''}${nuovoPremio ? ' Nuovo francobollo: Memory.' : ''}`);
+    // si lascia vedere l'ultima coppia prima di aprire la finestra
+    window.setTimeout(() => {
+      if (!dialogo.open) dialogo.showModal();
+      $('#vittoria-titolo', dialogo).focus();
+    }, riduci.matches ? 300 : 700);
+  }
+
+  // ---- Eventi ----
+  griglia.addEventListener('click', (e) => {
+    const b = (e.target as Element).closest<HTMLButtonElement>('.carta');
+    if (b) tocca(Number(b.dataset.i));
+  });
+  griglia.addEventListener('keydown', (e) => {
+    const b = (e.target as Element).closest<HTMLButtonElement>('.carta');
+    if (!b) return;
+    const i = Number(b.dataset.i);
+    const j = muovi(i, e.key, bottoni.length, livello.colonne, e.ctrlKey || e.metaKey);
+    if (j === i && !['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;
+    e.preventDefault();
+    attivo = j;
+    bottoni.forEach((x, k) => (x.tabIndex = k === j ? 0 : -1));
+    bottoni[j].focus();
+  });
+  griglia.addEventListener('focusin', (e) => {
+    const b = (e.target as Element).closest<HTMLButtonElement>('.carta');
+    if (b) { attivo = Number(b.dataset.i); bottoni.forEach((x, k) => (x.tabIndex = k === attivo ? 0 : -1)); }
+  });
+
+  for (const b of radice.querySelectorAll<HTMLButtonElement>('[data-livello]')) {
+    b.addEventListener('click', () => {
+      const l = livelliMemory.find((x) => x.id === b.dataset.livello);
+      if (!l) return;
+      if (l.id !== livello.id) {
+        livello = l;
+        try { localStorage.setItem(CHIAVE_LIVELLO, l.id); } catch { /* niente */ }
+      }
+      avvia();
+      annuncia(`Nuova partita, ${l.nome.toLowerCase()}: ${l.coppie} coppie.`);
+    });
+  }
+  $('[data-nuova]').addEventListener('click', () => {
+    avvia(true);
+    annuncia(`Nuova partita: ${livello.coppie} coppie.`);
+  });
+  $('[data-v-ancora]', dialogo).addEventListener('click', () => {
+    dialogo.close();
+    avvia(true);
+    annuncia(`Nuova partita: ${livello.coppie} coppie.`);
+  });
+  dialogo.addEventListener('click', (e) => { if (e.target === dialogo) dialogo.close(); });
+  dialogo.addEventListener('close', () => { if (!radice.contains(document.activeElement) || document.activeElement === document.body) $('[data-nuova]').focus(); });
+
+  osserva((s) => { stato = s; if (partita) disegnaRecord(); });
+  avvia();
+</script>
+
+<style>
+  /* Misure in punti mockup (940 di larghezza; 1 punto = var(--u)); testi e pulsanti con minimi in px. */
+  .mem {
+    position: relative;
+    min-height: max(100dvh, calc(1200 * var(--u)));
+    padding: calc(130 * var(--u)) calc(60 * var(--u)) calc(60 * var(--u));
+    background: linear-gradient(90deg, #e8cfc4 0%, #fbf4f0 9%, #f4e5dc 40%, #e9d3c4 100%);
+    font-size: max(14px, calc(30 * var(--u)));
+  }
+
+  .mem__indietro {
+    position: absolute;
+    top: calc(40 * var(--u));
+    left: calc(40 * var(--u));
+    color: var(--bordeaux);
+    font-weight: 700;
+    font-size: max(13px, calc(30 * var(--u)));
+    text-decoration: none;
+    padding: 6px 0;
+  }
+
+  .mem__testa { text-align: center; }
+  .mem__titolo {
+    margin: 0;
+    font-family: var(--font-titolo);
+    font-style: italic;
+    font-weight: 400;
+    font-size: max(34px, calc(100 * var(--u)));
+    line-height: 1.05;
+    color: var(--bordeaux);
+  }
+  .mem__sotto { margin: 4px 0 0; color: var(--grigio-testo); }
+
+  .mem__livelli {
+    display: flex;
+    justify-content: center;
+    gap: calc(20 * var(--u));
+    margin: calc(34 * var(--u)) 0 calc(20 * var(--u));
+  }
+  .mem__livello {
+    min-height: 44px;
+    padding: 0 max(12px, calc(30 * var(--u)));
+    border: 2px solid var(--bordeaux);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--bordeaux);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .mem__livello-n { font-weight: 400; }
+  .mem__livello[aria-pressed='true'] { background: var(--bordeaux); color: #fff; }
+
+  .mem__conta {
+    display: flex;
+    justify-content: center;
+    gap: max(14px, calc(40 * var(--u)));
+    margin: 0 0 calc(24 * var(--u));
+    color: var(--inchiostro);
+  }
+  .mem__conta strong { color: var(--bordeaux); }
+
+  /* Griglia: le righe ARIA non contano per il layout (display: contents) */
+  .mem__griglia {
+    display: grid;
+    grid-template-columns: repeat(var(--colonne), 1fr);
+    gap: calc(22 * var(--u));
+    max-width: calc(820 * var(--u));
+    margin: 0 auto;
+  }
+  .mem__griglia :global(.mem__riga),
+  .mem__griglia :global(.mem__cella) { display: contents; }
+
+  .mem__griglia :global(.carta) {
+    position: relative;
+    display: block;
+    width: 100%;
+    min-width: 44px;
+    aspect-ratio: 5 / 6;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    perspective: 700px;
+    border-radius: 8px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mem__griglia :global(.carta:focus-visible) { outline: 3px solid var(--bordeaux); outline-offset: 3px; }
+  .mem__griglia :global(.carta[data-stato='trovata']) { cursor: default; }
+  .mem__griglia :global(.carta__giro) {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transition: transform 0.45s cubic-bezier(0.3, 0.7, 0.3, 1);
+  }
+  .mem__griglia :global(.carta[data-stato='scoperta'] .carta__giro),
+  .mem__griglia :global(.carta[data-stato='trovata'] .carta__giro) { transform: rotateY(180deg); }
+  .mem__griglia :global(.carta__faccia) {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    filter: drop-shadow(0 2px 3px rgb(80 30 20 / 0.25));
+  }
+  .mem__griglia :global(.carta__fronte) { transform: rotateY(180deg); }
+  .mem__griglia :global(.carta__svg) { display: block; width: 100%; height: 100%; }
+  /* trovata: segno di spunta (non solo il colore) e carta un po' più tenue */
+  .mem__griglia :global(.carta__ok) {
+    position: absolute;
+    top: 6%;
+    right: 8%;
+    display: none;
+    width: max(18px, 22%);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--bordeaux);
+    color: #fff;
+    font-size: max(11px, calc(26 * var(--u)));
+    line-height: 1;
+    place-items: center;
+  }
+  .mem__griglia :global(.carta[data-stato='trovata'] .carta__ok) { display: grid; }
+  .mem__griglia :global(.carta[data-stato='trovata'] .carta__svg) { opacity: 0.72; }
+  .mem__griglia :global(.carta.is-sbagliata[data-stato='scoperta']) { animation: scuoti 0.4s ease; }
+  @keyframes scuoti {
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+
+  /* Niente rotazione con reduced-motion: si cambia faccia subito */
+  @media (prefers-reduced-motion: reduce) {
+    .mem__griglia :global(.carta__giro) { transition: none; transform: none !important; }
+    .mem__griglia :global(.carta__fronte) { transform: none; display: none; }
+    .mem__griglia :global(.carta:not([data-stato='coperta']) .carta__fronte) { display: block; }
+    .mem__griglia :global(.carta:not([data-stato='coperta']) .carta__dorso) { display: none; }
+    .mem__griglia :global(.carta.is-sbagliata[data-stato='scoperta']) { animation: none; }
+  }
+
+  .mem__messaggio {
+    min-height: 2.6em;
+    margin: calc(24 * var(--u)) 0 0;
+    text-align: center;
+    color: var(--bordeaux);
+    font-weight: 700;
+  }
+
+  .mem__piede {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px 20px;
+  }
+  .mem__bottone {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 20px;
+    border: 2px solid var(--bordeaux);
+    border-radius: 999px;
+    background: var(--bordeaux);
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .mem__bottone--secondario { background: transparent; color: var(--bordeaux); }
+  .mem__livello:focus-visible, .mem__bottone:focus-visible, .mem__indietro:focus-visible {
+    outline: 2px solid var(--bordeaux);
+    outline-offset: 3px;
+  }
+  .mem__premio-stato {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--grigio-testo);
+    font-size: max(13px, calc(26 * var(--u)));
+  }
+  .mem__premio-stato[hidden] { display: none; }
+  .mem__premio-stato img { width: 24px; height: auto; }
+  .mem__aiuto {
+    margin: calc(24 * var(--u)) 0 0;
+    text-align: center;
+    color: var(--grigio-testo);
+    font-size: max(13px, calc(24 * var(--u)));
+  }
+
+  /* Finestra della vittoria (come il dettaglio dei francobolli) */
+  .vittoria {
+    width: min(92vw, 360px);
+    padding: 24px 20px 20px;
+    border: 0;
+    border-radius: 14px;
+    background: #fbf4f0;
+    color: var(--inchiostro);
+    text-align: center;
+    box-shadow: 0 10px 40px rgb(0 0 0 / 0.25);
+  }
+  .vittoria::backdrop { background: rgb(40 20 18 / 0.45); }
+  .vittoria[open] { animation: entra 0.25s ease; }
+  @keyframes entra { from { opacity: 0; transform: translateY(12px) scale(0.97); } }
+  .vittoria__titolo {
+    margin: 0;
+    font-family: var(--font-titolo);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 34px;
+    color: var(--bordeaux);
+  }
+  /* il titolo riceve il focus solo per essere letto: niente contorno */
+  .vittoria .vittoria__titolo:focus, .vittoria .vittoria__titolo:focus-visible { outline: none; }
+  .vittoria__mosse { margin: 6px 0 0; }
+  .vittoria__record { margin: 6px 0 0; color: var(--bordeaux); font-weight: 700; }
+  .vittoria__premio { margin: 16px 0 0; }
+  .vittoria__premio p { margin: 8px 0 0; font-size: 15px; }
+  .vittoria__francobollo { display: block; width: 90px; height: auto; margin: 0 auto; animation: premio 0.7s ease; }
+  @keyframes premio { from { transform: scale(0.3) rotate(-25deg); opacity: 0; } 60% { transform: scale(1.1) rotate(4deg); } }
+  .vittoria__bottoni {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .vittoria :focus-visible { outline: 3px solid var(--bordeaux); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) {
+    .vittoria[open], .vittoria__francobollo { animation: none; }
+  }
+</style>

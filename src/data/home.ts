@@ -15,9 +15,10 @@ export const zampe = [
 ];
 export const zampaVisibile = 152; // larghezza della parte che esce dal bordo sinistro
 
-// Ordine come nel mockup: cuore, fiori, arcobaleno, sole
-export const giochi = [
-  { file: 'gioco-cuore.svg',      nome: 'Cuore',      w: 107.06, h: 107.35 },
+// Ordine come nel mockup: cuore, fiori, arcobaleno, sole.
+// `href` (relativo a BASE_URL) e `gioco`: il pulsante diventa un link al gioco (Fase 8: il cuore porta al Memory).
+export const giochi: { file: string; nome: string; w: number; h: number; href?: string; gioco?: string }[] = [
+  { file: 'gioco-cuore.svg',      nome: 'Cuore',      w: 107.06, h: 107.35, href: 'giochi/memory/', gioco: 'Memory' },
   { file: 'gioco-fiori.svg',      nome: 'Fiori',      w: 107.45, h: 107.76 },
   { file: 'gioco-arcobaleno.svg', nome: 'Arcobaleno', w: 107.55, h: 106.67 },
   { file: 'gioco-sole.svg',       nome: 'Sole',       w: 108.06, h: 107.93 },

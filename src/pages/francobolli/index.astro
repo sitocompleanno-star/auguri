@@ -10,7 +10,7 @@
 // La logica delle cartoline è in src/lib/cartolina-ui.ts; il PDF in src/lib/pdf-cartolina.ts (caricato al clic).
 // Lo stato vive in localStorage: al build tutti gli slot sono vuoti e lo script li riempie nel browser.
 import Base from '../../layouts/Base.astro';
-import { famiglie, emozioni } from '../../data/emozioni.ts';
+import { famiglie, tuttiFrancobolli } from '../../data/emozioni.ts';
 import { controllaRuota, francobolliDefinitivi } from '../../lib/francobolli-definitivi.ts';
 import { cartoline, retroSvg } from '../../data/cartoline.ts';
 import { FRANCOBOLLO_VUOTO } from '../../lib/francobolli.ts';
@@ -19,7 +19,7 @@ import { MAX_PREFERITI } from '../../lib/stato.ts';
 controllaRuota();
 const base = import.meta.env.BASE_URL;
 const definitivi = JSON.stringify(francobolliDefinitivi());
-const totale = emozioni.length;
+const totale = tuttiFrancobolli.length; // ruota + speciali dei giochi (Fase 8)
 const dev = import.meta.env.DEV;
 const g = `${base}grafica/cartoline/`;
 const [fiore, mappa] = cartoline;
@@ -92,7 +92,7 @@ const [fiore, mappa] = cartoline;
         </p>
       </div>
       <ul class="fb__griglia">
-        {emozioni.map(() => (
+        {tuttiFrancobolli.map(() => (
           <li aria-hidden="true">
             <button type="button" class="fb__francobollo" disabled>
               <img src={`${base}${FRANCOBOLLO_VUOTO}`} alt="" width="45.44" height="58.1" />
@@ -134,6 +134,7 @@ const [fiore, mappa] = cartoline;
           <div class="fb__prova-bottoni">
             <button type="button" class="fb__bottone" data-prova-sblocca>Sblocca</button>
             <button type="button" class="fb__bottone" data-prova-caso>5 a caso</button>
+            <button type="button" class="fb__bottone" data-prova-memory>Vinci Memory</button>
             <button type="button" class="fb__bottone fb__bottone--secondario" data-prova-azzera>Azzera tutto</button>
           </div>
         </section>
@@ -147,6 +148,7 @@ const [fiore, mappa] = cartoline;
       <img class="dettaglio__img" data-d-img src={`${base}${FRANCOBOLLO_VUOTO}`} alt="" width="45.44" height="58.1" />
       <h2 id="dettaglio-nome" class="dettaglio__nome" data-d-nome></h2>
       <p class="dettaglio__percorso" data-d-percorso></p>
+      <p class="dettaglio__gioco" data-d-gioco hidden></p>
       <p class="dettaglio__info" data-d-info></p>
       <button type="button" class="fb__bottone" data-d-preferito></button>
       <p class="dettaglio__msg" data-d-msg role="status"></p>
@@ -157,9 +159,9 @@ const [fiore, mappa] = cartoline;
 <script>
   import {
     MAX_PREFERITI, aggiorna, alternaPreferito, conteggi, dataDiOggi, impostaGiorno, leggi, osserva,
-    persistente, preferitiValidi, sbloccati, scrivi, statoVuoto, type Stato,
+    persistente, preferitiValidi, registraVittoria, sbloccati, scrivi, statoVuoto, type Stato,
   } from '../../lib/stato.ts';
-  import { emozione, emozioni, famiglia, intermedia } from '../../data/emozioni.ts';
+  import { emozione, emozioni, famiglia, intermedia, tuttiFrancobolli } from '../../data/emozioni.ts';
   import { FRANCOBOLLO_VUOTO, percorsoFrancobollo } from '../../lib/francobolli.ts';
   import { avviaCartoline } from '../../lib/cartolina-ui.ts';
 
@@ -180,6 +182,7 @@ const [fiore, mappa] = cartoline;
   // ---- Griglia: slot riempiti in ordine di sblocco ----
   const bottoni = [...document.querySelectorAll<HTMLButtonElement>('.fb__francobollo')];
   let attuale: Stato = statoVuoto();
+  const totale = tuttiFrancobolli.length;
 
   function disegna(s: Stato) {
     attuale = s;
@@ -207,8 +210,8 @@ const [fiore, mappa] = cartoline;
     $('[data-conta]').textContent = String(n);
     $('[data-num-preferiti]').textContent = String(pref.size);
     $('[data-riassunto]').textContent =
-      n === 0 ? `Nessun francobollo sbloccato su ${emozioni.length}.`
-        : `${n} francobolli sbloccati su ${emozioni.length}; gli altri ${emozioni.length - n} sono ancora da scoprire.`;
+      n === 0 ? `Nessun francobollo sbloccato su ${totale}.`
+        : `${n} francobolli sbloccati su ${totale}; gli altri ${totale - n} sono ancora da scoprire.`;
     $('[data-avviso]').hidden = persistente();
     if (dialogo.open && aperta) mostraDettaglio(aperta, false);
   }
@@ -228,9 +231,21 @@ const [fiore, mappa] = cartoline;
     const pref = preferitiValidi(attuale).includes(id);
     $<HTMLImageElement>('[data-d-img]', dialogo).src = base + percorsoFrancobollo(e, definitivi);
     $('[data-d-nome]', dialogo).textContent = e.nome;
-    $('[data-d-percorso]', dialogo).textContent = `${famiglia(e.famiglia)?.nome} › ${intermedia(e.intermedia)?.nome} › ${e.nome}`;
-    $('[data-d-info]', dialogo).textContent =
-      `Sbloccato il ${dataLunga(ok.get(id)!)} · scelto ${volte} ${volte === 1 ? 'volta' : 'volte'}`;
+    const gioco = $('[data-d-gioco]', dialogo);
+    if (e.gioco) {
+      // Fase 8: francobollo speciale vinto in un gioco
+      $('[data-d-percorso]', dialogo).textContent = 'Francobollo speciale';
+      gioco.replaceChildren('Vinto giocando a ', Object.assign(document.createElement('a'), {
+        href: `${base}giochi/memory/`, textContent: e.gioco,
+      }));
+      gioco.hidden = false;
+      $('[data-d-info]', dialogo).textContent = `Vinto il ${dataLunga(ok.get(id)!)}`;
+    } else {
+      gioco.hidden = true;
+      $('[data-d-percorso]', dialogo).textContent = `${famiglia(e.famiglia)?.nome} › ${intermedia(e.intermedia)?.nome} › ${e.nome}`;
+      $('[data-d-info]', dialogo).textContent =
+        `Sbloccato il ${dataLunga(ok.get(id)!)} · scelto ${volte} ${volte === 1 ? 'volta' : 'volte'}`;
+    }
     btnPref.textContent = pref ? 'Togli dalla home' : 'Metti nella home';
     btnPref.setAttribute('aria-pressed', String(pref));
     if (apri) {
@@ -278,6 +293,9 @@ const [fiore, mappa] = cartoline;
           }
           return t;
         });
+      });
+      $('[data-prova-memory]', p).addEventListener('click', () => {
+        aggiorna((s) => registraVittoria(s, 'memory', 'memory-facile', 6 + Math.floor(Math.random() * 10)));
       });
       $('[data-prova-azzera]', p).addEventListener('click', () => scrivi(statoVuoto()));
     }
@@ -714,6 +732,8 @@ const [fiore, mappa] = cartoline;
   }
   .dettaglio__percorso { margin: 4px 0 0; color: var(--grigio-testo); }
   .dettaglio__info { margin: 4px 0 16px; color: var(--grigio-testo); font-size: 13px; }
+  .dettaglio__gioco { margin: 4px 0 0; color: var(--bordeaux); font-weight: 700; }
+  .dettaglio__gioco :global(a) { color: inherit; } /* il link è creato dallo script */
   .dettaglio__msg { min-height: 1.3em; margin: 10px 0 0; color: var(--bordeaux); font-size: 13px; }
   .dettaglio :focus-visible { outline: 3px solid var(--bordeaux); outline-offset: 3px; }
 

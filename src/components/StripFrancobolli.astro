@@ -64,7 +64,7 @@ const idTitolo = `titolo-strip-${Math.random().toString(36).slice(2, 8)}`;
         const e = ids[i] ? emozione(ids[i]) : undefined;
         const src = base + (e ? percorsoFrancobollo(e, definitivi) : FRANCOBOLLO_VUOTO);
         if (img.getAttribute('src') !== src) img.setAttribute('src', src);
-        img.alt = e ? `Francobollo ${e.nome} (${famiglia(e.famiglia)?.nome ?? ''})` : 'Spazio libero';
+        img.alt = e ? `Francobollo ${e.nome} (${e.gioco ? 'vinto al gioco' : famiglia(e.famiglia)?.nome ?? ''})` : 'Spazio libero';
         img.closest('li')?.classList.toggle('is-pieno', !!e);
       });
     });

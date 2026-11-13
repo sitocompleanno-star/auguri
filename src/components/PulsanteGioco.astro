@@ -1,27 +1,50 @@
 ---
-// Pulsante quadrato di un gioco. In Fase 1 e solo grafica; il collegamento ai giochi arriva dalla Fase 5.
+// Pulsante quadrato di un gioco (Fase 1). Dalla Fase 8, con `href` diventa un link al gioco
+// (il cuore porta al Memory); senza `href` resta solo grafica, come prima.
 interface Props {
   file: string;
   nome: string;
   w: number;
   h: number;
+  href?: string;  // relativo a BASE_URL, es. 'giochi/memory/'
+  gioco?: string; // nome del gioco, per il nome accessibile del link
 }
-const { file, nome, w, h } = Astro.props;
+const { file, nome, w, h, href, gioco } = Astro.props;
 const base = import.meta.env.BASE_URL;
 ---
-<img
-  class="gioco"
-  src={`${base}grafica/${file}`}
-  alt={`Gioco: ${nome}`}
-  width={w}
-  height={h}
-  style={`--w:${w};--h:${h}`}
-/>
+{href ? (
+  <a class="gioco gioco--link" href={`${base}${href}`} style={`--w:${w};--h:${h}`} aria-label={`Gioca a ${gioco ?? nome}`}>
+    <img src={`${base}grafica/${file}`} alt="" width={w} height={h} />
+  </a>
+) : (
+  <img class="gioco" src={`${base}grafica/${file}`} alt={`Gioco: ${nome}`} width={w} height={h} style={`--w:${w};--h:${h}`} />
+)}
 
 <style>
   .gioco {
     display: block;
     width: calc(var(--w) * var(--u));
     height: calc(var(--h) * var(--u));
+  }
+  /* il link resta di almeno 44 x 44 px (a 390 px il pulsante è ~44 px) */
+  .gioco--link {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .gioco--link img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.15s ease;
+  }
+  .gioco--link:active img { transform: scale(0.94); }
+  .gioco--link:focus-visible {
+    outline: 2px solid var(--bordeaux);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gioco--link img { transition: none; }
+    .gioco--link:active img { transform: none; }
   }
 </style>

@@ -37,4 +37,6 @@ export const simboli: Record<SimboloId, string> = {
   spirale: `<path d="M0.4 0.2C0.4 -1.2 -1.6 -1.3 -2 0C-2.6 1.9 -0.4 3.5 1.6 2.9C4.2 2.1 4.6 -1.4 3 -3.4C0.9 -6 -3.4 -5.6 -5.2 -2.8C-7.3 0.5 -5.8 5.2 -2.2 6.5C1.6 7.9 6.1 6.1 7.5 2.3" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" fill="none"/>`,
   // fulmine
   fulmine: `<polygon points="2.2,-9 -6,1.4 -0.6,1.4 -2.4,9 6,-2 0.6,-2" fill="currentColor"/>`,
+  // cuore (Fase 8: francobollo speciale del Memory, come il primo pulsante dei giochi)
+  cuore: `<path d="M0 8.2C-5.6 4.4-8.6 1.1-8.6-2.6-8.6-5.6-6.4-7.8-3.8-7.8-2.1-7.8-0.8-6.9 0-5.5 0.8-6.9 2.1-7.8 3.8-7.8 6.4-7.8 8.6-5.6 8.6-2.6 8.6 1.1 5.6 4.4 0 8.2Z" fill="currentColor"/>`,
 };

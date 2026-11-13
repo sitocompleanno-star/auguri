@@ -1,11 +1,11 @@
-// Genera i francobolli SEGNAPOSTO (uno per emozione di ultimo livello) in public/placeholders/francobolli/.
+// Genera i francobolli SEGNAPOSTO (uno per emozione di ultimo livello, più gli speciali dei giochi, Fase 8) in public/placeholders/francobolli/.
 // Stesso viewBox dello slot vuoto (45.44 x 58.1) e stesso nome file dei definitivi: quando arriva l'SVG vero
 // basta metterlo in public/grafica/francobolli/ con lo stesso nome (il sito usa quello al posto del segnaposto).
 //
 // Uso:  npm run francobolli      (da rilanciare se cambi src/data/emozioni.ts)
 import { mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { emozioni, INCHIOSTRO, verificaRuota } from '../src/data/emozioni.ts';
+import { tuttiFrancobolli as emozioni, INCHIOSTRO, verificaRuota } from '../src/data/emozioni.ts';
 import { simboli } from '../src/data/simboli.ts';
 
 const W = 45.44;

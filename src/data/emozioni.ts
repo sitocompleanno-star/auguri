@@ -16,7 +16,7 @@
 // emozione intermedia, dalla più chiara alla più scura. Le emozioni di ultimo livello prendono la sfumatura
 // della loro emozione intermedia. Valori calcolati in OKLCH (stessa luminosità per tutte le famiglie).
 
-export type SimboloId = 'sole' | 'goccia' | 'stella' | 'fulmine' | 'spirale' | 'nuvola';
+export type SimboloId = 'sole' | 'goccia' | 'stella' | 'fulmine' | 'spirale' | 'nuvola' | 'cuore';
 
 /** Colore del testo e delle iniziali sui francobolli (come --inchiostro in global.css). */
 export const INCHIOSTRO = '#221f20';
@@ -31,6 +31,7 @@ export interface Emozione {
   sfumatura: string;    // colore di fondo del francobollo
   colore: string;       // colore della famiglia (bordo e simbolo)
   francobollo: string;  // nome file dell'SVG, uguale per placeholder e definitivo
+  gioco?: string;       // (Fase 8) solo per i francobolli speciali: nome del gioco che lo fa vincere
 }
 
 export interface EmozioneIntermedia {
@@ -190,10 +191,29 @@ export const famiglie: Famiglia[] = RUOTA.map((f) => ({
 /** Tutte le emozioni di ultimo livello, nell'ordine della ruota (è anche l'ordine della griglia dei francobolli). */
 export const emozioni: Emozione[] = famiglie.flatMap((f) => f.emozioni.flatMap((m) => m.emozioni));
 
-const perId = new Map(emozioni.map((e) => [e.id, e]));
+// ---------------------------------------------------------------------------------------------------------
+// Francobolli speciali (Fase 8): si vincono nei giochi, non stanno nella ruota e non si scelgono nel Diario.
+// Hanno la stessa forma delle emozioni (simbolo + iniziale, riconoscibili anche senza colore), così griglia,
+// preferiti, cartoline e striscia della home li trattano come gli altri. Nello stato stanno in `premi`.
+// Come per le emozioni, l'`id` è salvato nello stato: non va cambiato dopo l'uso.
+// ---------------------------------------------------------------------------------------------------------
+export const FAMIGLIA_GIOCHI = 'giochi';
+export const speciali: Emozione[] = [
+  {
+    id: 'memory', nome: 'Memory', famiglia: FAMIGLIA_GIOCHI, intermedia: '', iniziale: 'M', simbolo: 'cuore',
+    sfumatura: '#f7dcce', colore: '#6f211c', francobollo: 'memory.svg', gioco: 'Memory',
+  },
+];
+
+/** Tutti i francobolli: prima la ruota, poi gli speciali (è l'ordine dei segnaposto e il totale della griglia). */
+export const tuttiFrancobolli: Emozione[] = [...emozioni, ...speciali];
+
+const perId = new Map(tuttiFrancobolli.map((e) => [e.id, e]));
+/** Emozione della ruota o francobollo speciale (Fase 8) con questo id. */
 export function emozione(id: string): Emozione | undefined {
   return perId.get(id);
 }
+export const speciale = (id: string): boolean => !!perId.get(id)?.gioco;
 export function famiglia(id: string): Famiglia | undefined {
   return famiglie.find((f) => f.id === id);
 }
@@ -236,6 +256,15 @@ export function verificaRuota(): string[] {
         iniziali.set(e.iniziale, e.nome);
       }
     }
+  }
+  const iniziali = new Set<string>();
+  for (const e of speciali) {
+    if (visti.has(e.id)) problemi.push(`id ripetuto: ${e.id}`);
+    visti.add(e.id);
+    if (iniziali.has(e.iniziale)) problemi.push(`francobolli speciali: iniziale ripetuta (${e.iniziale})`);
+    iniziali.add(e.iniziale);
+    if (contrasto(INCHIOSTRO, e.sfumatura) < 4.5) problemi.push(`${e.nome}: iniziale poco leggibile`);
+    if (contrasto(e.colore, e.sfumatura) < 3) problemi.push(`${e.nome}: simbolo poco contrastato`);
   }
   return problemi;
 }
