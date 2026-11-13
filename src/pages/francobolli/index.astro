@@ -1,13 +1,18 @@
 ---
 // Pagina Francobolli (Fase 3), dalla tavola 4 di Francobolli_e_luna_park.pdf (940 x 1200 punti, come la home):
 // sfondo caldo sfumato, portafoglio con due icone (busta con cuore = cartolina fiore, cartellina TRAVEL =
-// cartolina mappa; le cartoline vere arrivano in Fase 5) e, in basso, la fascia "FRANCOBOLLI" con gli slot
-// (16 per riga, stessa misura della striscia in home). I francobolli sbloccati riempiono gli slot in ordine di
-// sblocco; un tocco apre il dettaglio, dove si sceglie se metterlo tra i preferiti della home.
+// cartolina mappa) e, in basso, la fascia "FRANCOBOLLI" con gli slot (16 per riga, stessa misura della
+// striscia in home). I francobolli sbloccati riempiono gli slot in ordine di sblocco; un tocco apre il
+// dettaglio, dove si sceglie se metterlo tra i preferiti della home.
+// Fase 5 (tavole 4-7 e note della tavola 12): primo tocco su un'icona = il portafoglio si apre (le cartoline
+// spuntano); secondo tocco = la cartolina esce e si allarga. Lì si attaccano i francobolli trascinandoli dal
+// vassoio (che prende il posto della griglia nella fascia), si gira la cartolina e si scarica il PDF.
+// La logica delle cartoline è in src/lib/cartolina-ui.ts; il PDF in src/lib/pdf-cartolina.ts (caricato al clic).
 // Lo stato vive in localStorage: al build tutti gli slot sono vuoti e lo script li riempie nel browser.
 import Base from '../../layouts/Base.astro';
 import { famiglie, emozioni } from '../../data/emozioni.ts';
-import { controllaRuota, francobolliDefinitivi, graficaOSegnaposto } from '../../lib/francobolli-definitivi.ts';
+import { controllaRuota, francobolliDefinitivi } from '../../lib/francobolli-definitivi.ts';
+import { cartoline, retroSvg } from '../../data/cartoline.ts';
 import { FRANCOBOLLO_VUOTO } from '../../lib/francobolli.ts';
 import { MAX_PREFERITI } from '../../lib/stato.ts';
 
@@ -16,26 +21,62 @@ const base = import.meta.env.BASE_URL;
 const definitivi = JSON.stringify(francobolliDefinitivi());
 const totale = emozioni.length;
 const dev = import.meta.env.DEV;
-const busta = graficaOSegnaposto('portafoglio-busta.svg');
-const travel = graficaOSegnaposto('portafoglio-travel.svg');
+const g = `${base}grafica/cartoline/`;
+const [fiore, mappa] = cartoline;
 ---
 <Base titolo="Collezione di francobolli · minuscole">
   <main class="fb" data-francobolli data-base={base} data-definitivi={definitivi}>
     <a class="fb__indietro" href={base}>← torna alla home</a>
     <h1 class="visually-hidden">Collezione di francobolli</h1>
 
-    <!-- Portafoglio: le cartoline vere arrivano in Fase 5 -->
+    <!-- Portafoglio (tavole 4-5) e cartolina (tavole 6-7). Scena in punti mockup: x 0-940, y 160-700 della tavola. -->
     <section class="fb__portafoglio" aria-labelledby="titolo-portafoglio">
       <h2 id="titolo-portafoglio" class="visually-hidden">Portafoglio delle cartoline</h2>
-      <div class="fb__icone">
-        <button type="button" class="fb__icona" data-cartolina="La cartolina con il fiore">
-          <img src={`${base}${busta}`} alt="" width="351" height="265" />
-          <span class="visually-hidden">Cartolina con il fiore (in arrivo)</span>
+      <div class="scena" data-scena data-stato="chiuso">
+        <!-- livelli: fondo della busta aperta, cartoline, tasche davanti, busta chiusa -->
+        <img class="liv liv--busta-aperta" src={`${g}busta-aperta.webp`} alt="" width="704" height="828" />
+        {cartoline.map((c) => (
+          <div class={`cartolina cartolina--${c.id}`} data-cartolina={c.id} data-pos="dentro"
+            role="group" aria-roledescription="cartolina" aria-label={c.nome} tabindex="-1">
+            <div class="cartolina__giro" data-giro>
+              <div class="cartolina__faccia cartolina__fronte" data-fronte>
+                <img class="cartolina__img" src={`${base}${c.fronte}`} alt="" width="1772" height="1181" decoding="async" />
+                <div class="cartolina__francobolli" data-area aria-label="Francobolli sulla cartolina" role="list"></div>
+              </div>
+              <div class="cartolina__faccia cartolina__retro" data-retro set:html={retroSvg(c)} />
+            </div>
+          </div>
+        ))}
+        <img class="liv liv--busta-tasca" src={`${g}busta-tasca.webp`} alt="" width="702" height="404" />
+        <img class="liv liv--cartellina-tasca" src={`${g}cartellina-tasca.webp`} alt="" width="702" height="497" />
+        <img class="liv liv--busta-chiusa" src={`${g}busta-chiusa.webp`} alt="" width="702" height="537" />
+
+        <button type="button" class="icona icona--fiore" data-icona={fiore.id} data-nome={fiore.nome}>
+          <span class="visually-hidden" data-icona-nome>Apri il portafoglio: {fiore.nome.toLowerCase()}</span>
         </button>
-        <button type="button" class="fb__icona" data-cartolina="La cartolina con la mappa">
-          <img src={`${base}${travel}`} alt="" width="351" height="265" />
-          <span class="visually-hidden">Cartolina con la mappa (in arrivo)</span>
+        <button type="button" class="icona icona--mappa" data-icona={mappa.id} data-nome={mappa.nome}>
+          <span class="visually-hidden" data-icona-nome>Apri il portafoglio: {mappa.nome.toLowerCase()}</span>
         </button>
+      </div>
+
+      <!-- Comandi della cartolina aperta -->
+      <div class="comandi" data-comandi hidden>
+        <h3 class="visually-hidden" data-titolo-cartolina tabindex="-1"></h3>
+        <div class="comandi__riga" role="group" aria-label="Francobollo sulla cartolina">
+          <button type="button" class="tondo" data-ruota="-15" aria-label="Ruota il francobollo a sinistra">↺</button>
+          <button type="button" class="tondo" data-ruota="15" aria-label="Ruota il francobollo a destra">↻</button>
+          <button type="button" class="tondo tondo--testo" data-togli>Togli</button>
+        </div>
+        <div class="comandi__riga">
+          <button type="button" class="fb__bottone fb__bottone--secondario" data-chiudi>← Portafoglio</button>
+          <button type="button" class="fb__bottone fb__bottone--secondario" data-gira aria-pressed="false">Gira</button>
+          <button type="button" class="fb__bottone" data-pdf>Scarica il PDF</button>
+        </div>
+        <p id="aiuto-francobollo" class="visually-hidden">
+          Trascinalo per spostarlo, o fuori dalla cartolina per toglierlo. Da tastiera: frecce per spostarlo
+          (con Maiusc più veloce), Q ed E per ruotarlo, Canc per toglierlo.
+        </p>
+        <p class="comandi__nota">Stampa al 100% (dimensione reale) su carta 10 x 15, fronte-retro sul lato corto.</p>
       </div>
       <p class="fb__messaggio" data-messaggio role="status"></p>
     </section>
@@ -43,6 +84,13 @@ const travel = graficaOSegnaposto('portafoglio-travel.svg');
     <section class="fb__fascia" aria-labelledby="titolo-francobolli">
       <h2 id="titolo-francobolli" class="fb__titolo">FRANCOBOLLI</h2>
       <p class="visually-hidden" data-riassunto aria-live="polite">Nessun francobollo sbloccato su {totale}.</p>
+      <div class="vassoio" data-vassoio hidden>
+        <p class="vassoio__nota" id="nota-vassoio">Trascina un francobollo sulla cartolina. Ne puoi attaccare uno.</p>
+        <ul class="vassoio__lista" data-vassoio-lista aria-describedby="nota-vassoio"></ul>
+        <p class="vassoio__vuoto" data-vassoio-vuoto hidden>
+          Non hai ancora francobolli: li sblocchi scegliendo un'emozione nel <a href={`${base}diario/`}>Diario</a>.
+        </p>
+      </div>
       <ul class="fb__griglia">
         {emozioni.map(() => (
           <li aria-hidden="true">
@@ -55,12 +103,12 @@ const travel = graficaOSegnaposto('portafoglio-travel.svg');
           </li>
         ))}
       </ul>
-      <p class="fb__info">
+      <p class="fb__info" data-info-griglia>
         <span><strong data-conta>0</strong> di {totale}</span>
         <span><svg class="fb__cuore-testo" viewBox="0 0 20 18" aria-hidden="true"><path d="M10 17C3 12 1 8.5 1 5.5 1 2.8 3.1 1 5.4 1 7.3 1 8.9 2.1 10 3.8 11.1 2.1 12.7 1 14.6 1 16.9 1 19 2.8 19 5.5 19 8.5 17 12 10 17Z" /></svg>
           <strong data-num-preferiti>0</strong>/{MAX_PREFERITI} nella home</span>
       </p>
-      <p class="fb__nota">Tocca un francobollo per vederlo e sceglierlo per la home.</p>
+      <p class="fb__nota" data-nota-griglia>Tocca un francobollo per vederlo e sceglierlo per la home.</p>
       <p class="fb__avviso" data-avviso hidden>
         Questo browser non permette di salvare: le scelte valgono solo finché la pagina resta aperta.
       </p>
@@ -109,6 +157,7 @@ const travel = graficaOSegnaposto('portafoglio-travel.svg');
   } from '../../lib/stato.ts';
   import { emozione, emozioni, famiglia, intermedia } from '../../data/emozioni.ts';
   import { FRANCOBOLLO_VUOTO, percorsoFrancobollo } from '../../lib/francobolli.ts';
+  import { avviaCartoline } from '../../lib/cartolina-ui.ts';
 
   const radice = document.querySelector<HTMLElement>('[data-francobolli]')!;
   const base = radice.dataset.base ?? '/';
@@ -121,16 +170,8 @@ const travel = graficaOSegnaposto('portafoglio-travel.svg');
       .format(new Date(`${d}T12:00:00Z`))
       .replace(/^1 /, '1º ');
 
-  // ---- Portafoglio: per ora solo un messaggio "in arrivo" (cartoline in Fase 5) ----
-  const messaggio = $('[data-messaggio]');
-  let timer = 0;
-  for (const b of document.querySelectorAll<HTMLButtonElement>('[data-cartolina]')) {
-    b.addEventListener('click', () => {
-      messaggio.textContent = `${b.dataset.cartolina} è in arrivo!`;
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => (messaggio.textContent = ''), 3500);
-    });
-  }
+  // ---- Portafoglio e cartoline (Fase 5) ----
+  avviaCartoline(radice, base, definitivi);
 
   // ---- Griglia: slot riempiti in ordine di sblocco ----
   const bottoni = [...document.querySelectorAll<HTMLButtonElement>('.fb__francobollo')];
@@ -272,26 +313,207 @@ const travel = graficaOSegnaposto('portafoglio-travel.svg');
     justify-content: center;
     padding: calc(150 * var(--u)) 0 calc(60 * var(--u));
   }
-  .fb__icone {
-    display: flex;
-    justify-content: center;
-    gap: calc(26 * var(--u));
+  /*
+    Fase 5 · Scena del portafoglio e della cartolina (punti mockup; origine = y 160 della tavola, alta 540).
+    Livelli estratti dalle tavole 4-5 (public/grafica/cartoline/, vedi scripts/estrai-cartoline.py) e
+    posizionati con il riquadro stampato dallo script. Le cartoline sono sempre in grande (782 x 521,3, 3:2)
+    e lo script le rimpicciolisce con transform quando stanno nel portafoglio.
+  */
+  .scena {
+    position: relative;
+    height: calc(540 * var(--u));
+    margin-top: calc(-30 * var(--u));
   }
-  .fb__icona {
+  .liv {
+    position: absolute;
     display: block;
-    width: calc(351 * var(--u));
-    height: calc(265 * var(--u));
+    height: auto;
+    pointer-events: none;
+    transition: opacity 300ms ease;
+    filter: drop-shadow(0 calc(4 * var(--u)) calc(3 * var(--u)) rgb(120 80 70 / 0.16));
+  }
+  .liv--busta-aperta { left: calc(105.5 * var(--u)); top: calc(14.5 * var(--u)); width: calc(352 * var(--u)); z-index: 1; }
+  .liv--busta-tasca { left: calc(106 * var(--u)); top: calc(230 * var(--u)); width: calc(351 * var(--u)); z-index: 3; }
+  .liv--cartellina-tasca { left: calc(483 * var(--u)); top: calc(182.5 * var(--u)); width: calc(351 * var(--u)); z-index: 3; }
+  .liv--busta-chiusa { left: calc(106 * var(--u)); top: calc(163.5 * var(--u)); width: calc(351 * var(--u)); z-index: 4; }
+
+  /* stati: chiuso (tavola 4), aperto (tavola 5), cartolina (tavole 6-7) */
+  .scena[data-stato='chiuso'] .liv--busta-aperta,
+  .scena[data-stato='chiuso'] .liv--busta-tasca { opacity: 0; }
+  .scena:not([data-stato='chiuso']) .liv--busta-chiusa { opacity: 0; }
+  .scena[data-stato='cartolina'] .liv { opacity: 0; }
+  .scena[data-stato='cartolina'] .cartolina:not(.is-davanti) { opacity: 0; visibility: hidden; transition: opacity 250ms ease, visibility 0s 250ms; }
+
+  .cartolina {
+    position: absolute;
+    left: calc(79 * var(--u));
+    top: calc(10 * var(--u));
+    width: calc(782 * var(--u));
+    height: calc(521.333 * var(--u));
+    z-index: 2;
+    transform-origin: 0 0;
+    perspective: calc(2400 * var(--u));
+    pointer-events: none;
+    transition: opacity 250ms ease;
+  }
+  .cartolina.is-davanti { z-index: 6; pointer-events: auto; }
+  .cartolina:focus { outline: none; }
+  .cartolina__giro {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 600ms cubic-bezier(.3,.7,.2,1);
+  }
+  .cartolina.is-retro .cartolina__giro { transform: rotateY(180deg); }
+  .cartolina__faccia {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: calc(20 * var(--u));
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    box-shadow: 0 calc(6 * var(--u)) calc(16 * var(--u)) rgb(90 55 45 / 0.22);
+  }
+  .cartolina__img { display: block; width: 100%; height: 100%; object-fit: cover; user-select: none; -webkit-user-select: none; }
+  .cartolina__retro { transform: rotateY(180deg); }
+  .cartolina__retro :global(svg) { display: block; width: 100%; height: 100%; }
+  .cartolina__francobolli { position: absolute; inset: 0; }
+  .cartolina.is-bersaglio .cartolina__fronte { outline: 3px dashed rgb(111 33 28 / 0.55); outline-offset: -6px; }
+
+  /* Francobollo attaccato (creato dallo script): centro in (left, top), larghezza 13,5% (~20 mm in stampa) */
+  .cartolina :global(.attaccato) {
+    position: absolute;
+    width: 13.5%;
+    aspect-ratio: 45.44 / 58.1;
+    transform: translate(-50%, -50%) rotate(var(--r, 0deg));
+  }
+  .cartolina :global(.attaccato__btn) {
+    display: block;
+    width: 100%;
+    height: 100%;
     padding: 0;
     border: 0;
-    border-radius: calc(10 * var(--u));
     background: none;
-    filter: drop-shadow(0 calc(4 * var(--u)) calc(3 * var(--u)) rgb(120 80 70 / 0.18));
+    cursor: grab;
+    touch-action: none;
+    filter: drop-shadow(0 2px 2px rgb(60 35 30 / 0.3));
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+  .cartolina :global(.attaccato__btn img) { display: block; width: 100%; height: 100%; pointer-events: none; }
+  .cartolina :global(.attaccato.is-trascinato) { z-index: 50 !important; }
+  .cartolina :global(.attaccato.is-trascinato .attaccato__btn) { cursor: grabbing; transform: scale(1.08); }
+  .cartolina :global(.attaccato.is-fuori) { opacity: 0.45; }
+  .cartolina :global(.attaccato__btn:focus-visible) { outline: 3px solid var(--bordeaux); outline-offset: 3px; }
+
+  /* Icone del portafoglio: pulsanti trasparenti sopra i livelli */
+  .icona {
+    position: absolute;
+    z-index: 5;
+    padding: 0;
+    border: 0;
+    border-radius: calc(12 * var(--u));
+    background: none;
     cursor: pointer;
-    transition: transform 160ms ease;
     -webkit-tap-highlight-color: transparent;
   }
-  .fb__icona img { display: block; width: 100%; height: 100%; }
-  .fb__icona:active { transform: scale(0.97); }
+  .icona--fiore { left: calc(104 * var(--u)); top: calc(162 * var(--u)); width: calc(355 * var(--u)); height: calc(272 * var(--u)); }
+  .scena:not([data-stato='chiuso']) .icona--fiore { top: calc(12 * var(--u)); height: calc(422 * var(--u)); }
+  .icona--mappa { left: calc(481 * var(--u)); top: calc(100 * var(--u)); width: calc(355 * var(--u)); height: calc(334 * var(--u)); }
+  .scena[data-stato='cartolina'] .icona { display: none; }
+  .icona:focus-visible { outline: 3px solid var(--bordeaux); outline-offset: 3px; }
+
+  /* Comandi della cartolina aperta (misure in px: devono restare comodi col dito) */
+  .comandi { display: grid; gap: 10px; justify-items: center; margin-top: calc(10 * var(--u)); }
+  /* nascosti ma con il loro spazio: così la colonna centrata non scatta quando compaiono */
+  .comandi[hidden] { display: grid; visibility: hidden; }
+  .comandi__riga { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .comandi__nota { margin: 0; padding: 0 16px; color: var(--grigio-testo); font-size: 12px; text-align: center; }
+  .tondo {
+    min-width: 44px;
+    height: 44px;
+    padding: 0 12px;
+    border: 2px solid var(--bordeaux);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--bordeaux);
+    font: inherit;
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .tondo--testo { font-size: 15px; }
+  .tondo:disabled, .fb__bottone:disabled { opacity: 0.4; cursor: default; }
+  .comandi .fb__bottone { min-height: 44px; }
+  .comandi h3:focus { outline: none; }
+
+  /* Vassoio: con la cartolina aperta prende il posto della griglia nella fascia */
+  .fb.is-cartolina .fb__griglia,
+  .fb.is-cartolina [data-info-griglia],
+  .fb.is-cartolina [data-nota-griglia] { display: none; }
+  .vassoio[hidden] { display: none; }
+  .vassoio__nota { margin: 4px 0 8px; font-size: 13px; color: var(--grigio-testo); text-align: center; }
+  .vassoio__lista {
+    display: flex;
+    gap: 12px;
+    margin: 0 calc(-31.8 * var(--u));
+    padding: 10px calc(31.8 * var(--u)) 14px;
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+  .vassoio__lista li { flex: none; }
+  .vassoio :global(.vassoio__francobollo) {
+    position: relative;
+    display: block;
+    width: 48px;
+    aspect-ratio: 45.44 / 58.1;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: grab;
+    touch-action: pan-x; /* in orizzontale scorre il vassoio, in verticale si trascina */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .vassoio :global(.vassoio__francobollo img) { display: block; width: 100%; height: 100%; pointer-events: none; }
+  .vassoio :global(.vassoio__francobollo.is-sulla) { opacity: 0.4; }
+  .vassoio :global(.vassoio__francobollo.is-sulla)::after {
+    content: '✓';
+    position: absolute;
+    right: -6px;
+    top: -8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--bordeaux);
+    color: #fff;
+    font-size: 13px;
+    line-height: 20px;
+    text-align: center;
+  }
+  .vassoio :global(.vassoio__francobollo:focus-visible) { outline: 3px solid var(--bordeaux); outline-offset: 3px; }
+  .vassoio__vuoto { margin: 6px 0 10px; font-size: 14px; text-align: center; }
+  .vassoio__vuoto a { color: var(--bordeaux); font-weight: 700; }
+
+  /* Francobollo che segue il dito mentre si trascina dal vassoio (aggiunto a <body>) */
+  :global(.fantasma) {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 100;
+    aspect-ratio: 45.44 / 58.1;
+    pointer-events: none;
+    filter: drop-shadow(0 6px 8px rgb(60 35 30 / 0.35));
+    transition: opacity 120ms ease;
+  }
+  :global(.fantasma img) { display: block; width: 100%; height: 100%; }
+  :global(.fantasma.is-fuori) { opacity: 0.6; }
+
   .fb__messaggio {
     min-height: 1.4em;
     margin: calc(24 * var(--u)) 0 0;
@@ -391,7 +613,6 @@ const travel = graficaOSegnaposto('portafoglio-travel.svg');
     outline: 2px solid var(--bordeaux);
     outline-offset: 3px;
   }
-  .fb__icona:focus-visible { outline-width: 3px; }
 
   .fb__bottone {
     padding: 0.55em 1.1em;
@@ -466,6 +687,7 @@ const travel = graficaOSegnaposto('portafoglio-travel.svg');
 
   @media (prefers-reduced-motion: reduce) {
     .dettaglio[open] { animation: none; }
-    .fb__icona, .fb__francobollo img { transition: none; transform: none !important; }
+    .fb__francobollo img { transition: none; transform: none !important; }
+    .cartolina__giro, .liv, .cartolina { transition: none; }
   }
 </style>

@@ -43,11 +43,13 @@ Pagina `/diario/`: flusso "Come ti senti oggi?" a 3 livelli, calendario annuale 
 - Zampa estesa in alto a sinistra, scorre con la pagina.
 **Fatto quando:** si sceglie un'emozione, il giorno si dipinge, il francobollo si sblocca e tutto resta dopo il ricaricamento. ✅ (2026-11-11)
 
-### Fase 5 · Cartoline e PDF
+### Fase 5 · Cartoline e PDF ✅
 Dentro `/francobolli/`: due cartoline (fiore e mappa, dalle tavole del mockup; predisposto per altre in futuro) a cui si attaccano i francobolli sbloccati, con posizione e rotazione salvate nello stato.
 - Un clic sulla prima o sulla seconda icona del portafoglio apre la cartolina corrispondente.
 - PDF a due facciate (fronte e retro), formato 10 x 15 cm (150 x 100 mm in orizzontale come nelle tavole), generato nel browser: disegno su canvas a 300 dpi e inserimento con una libreria PDF caricata solo in questa pagina (es. `pdf-lib`).
-**Fatto quando:** si compone una cartolina, si scarica il PDF e si stampa fronte-retro a 10 x 15 cm con i francobolli al posto giusto.
+**Fatto quando:** si compone una cartolina, si scarica il PDF e si stampa fronte-retro a 10 x 15 cm con i francobolli al posto giusto. ✅ (2026-11-13; misure del PDF verificate, stampa reale da provare)
+- Due tocchi come nella tavola 12: il primo apre il portafoglio (tavola 5), il secondo fa uscire e allargare la cartolina (tavole 6-7).
+- Un francobollo per cartolina (`MAX_FRANCOBOLLI_CARTOLINA`), trascinato dal vassoio; retro senza scritte; PDF scritto senza librerie.
 
 ### Fase 6 · Sincronizzazione tra dispositivi (senza login)
 Il codice segreto viene generato sul dispositivo dell'utente al primo salvataggio (nessuno lo vede, nemmeno chi ha costruito il sito). Dati cifrati nel browser (chiave derivata dal codice) e salvati su un piccolo servizio gratuito (previsto Cloudflare Workers + KV). "Collega un altro dispositivo" con QR/link; unione per giorno (vince la modifica più recente); esportazione/importazione del file come rete di sicurezza. Il repository è pubblico: nessun segreto nel codice.
@@ -105,9 +107,21 @@ Decisione: **solo GitHub**, nessun servizio esterno per i file; i video vanno su
 - Settimana da lunedì; ogni mese ha una griglia da 6 righe.
 - Sfondo carta e pomello a fiore estratti dal mockup (`public/grafica/diario-*`): si sostituiscono con file con lo stesso nome.
 
+## Decisioni prese per le cartoline (Fase 5)
+
+- Interazione della tavola 12: primo tocco = il portafoglio si apre, secondo tocco = la cartolina.
+- Proporzioni 10 x 15 (3:2) a schermo e in stampa: la grafica del mockup (1,29:1) è tagliata in alto e in basso.
+- Grafica estratta dalle tavole 4-7 (`scripts/estrai-cartoline.py`).
+- Le righe sul fronte della mappa sono decorative: si scrive a mano dopo la stampa.
+- Retro senza scritte: riga divisoria, righe per l'indirizzo, riquadro per il francobollo postale.
+- Al massimo un francobollo per cartolina; se se ne trascina un altro, prende il suo posto.
+- Si attacca trascinando (dito o mouse); da tastiera c'è l'alternativa.
+- Un francobollo non più sbloccato si toglie dalla cartolina.
+- PDF generato senza librerie (generatore minimo in `src/lib/pdf-cartolina.ts`, ~3 KB, caricato al clic).
+
 ## Da decidere
 - Conferma dell'elenco delle emozioni (3 livelli, proposta provvisoria in `src/data/emozioni.ts`) e della palette per famiglia
-- Grafica dei francobolli (placeholder fino ad allora) e delle cartoline definitive
+- Grafica dei francobolli (placeholder fino ad allora); cartoline e portafoglio definitivi dall'artista (oggi estratti dal mockup)
 - Se la griglia dei francobolli resta "in ordine di sblocco" (come il mockup) o per famiglia
 - Nome del repository GitHub (influisce sul `base` di Astro)
 - Ordine delle pagine interne (Fase 10)

@@ -5,7 +5,9 @@
 //     giorni: { "AAAA-MM-GG": { emozione: "realizzata" | null, modificato: "2026-11-11T18:00:00.000Z" } },
 //     preferiti: ["realizzata", ...],          // max 9, francobolli mostrati nella striscia della home
 //     preferitiModificato: "2026-...Z",        // serve all'unione tra dispositivi (Fase 6)
-//     cartoline: {}                            // Fase 5
+//     cartoline: {                             // Fase 5
+//       fiore: { francobolli: [{ id: "realizzata", x: 0.8, y: 0.2, r: -6 }], modificato: "2026-...Z" }
+//     }
 //   }
 //
 // - `emozione: null` = giorno cancellato. Si tiene la voce (con la sua data di modifica) invece di toglierla,
@@ -14,10 +16,16 @@
 // - Le funzioni sul dato sono pure (prendono uno stato e ne restituiscono uno nuovo); solo `leggi`/`scrivi`
 //   toccano localStorage, sempre dentro try/catch (può essere bloccato, es. Safari in privato o cookie off).
 //   Se non si può salvare, il sito continua a funzionare con una copia in memoria (`persistente()` = false).
+// - Cartoline (Fase 5): la chiave è l'id della cartolina (`src/data/cartoline.ts`), così se ne possono aggiungere
+//   altre. Ogni francobollo attaccato ha il centro (x, y) in FRAZIONI della cartolina (0-1, indipendenti dallo
+//   schermo e dalla stampa) e la rotazione r in gradi. Un francobollo che non è più sbloccato (giorno cambiato
+//   nel Diario) viene tolto dalla cartolina (`pulisciCartoline`, chiamata da `impostaGiorno` e `unisci`).
 
 export const VERSIONE = 1;
 export const CHIAVE = 'minuscole:stato';
 export const MAX_PREFERITI = 9;
+/** Francobolli al massimo su una cartolina (deciso: uno solo). Se cambia, gli stati salvati restano validi. */
+export const MAX_FRANCOBOLLI_CARTOLINA = 1;
 /** Evento lanciato su window quando lo stato cambia (anche da un'altra scheda). */
 export const EVENTO = 'minuscole:stato';
 
@@ -26,15 +34,28 @@ export interface Giorno {
   modificato: string; // ISO 8601 (UTC)
 }
 
+export interface FrancobolloAttaccato {
+  id: string; // id dell'emozione
+  x: number;  // centro, frazione della larghezza della cartolina (0-1)
+  y: number;  // centro, frazione dell'altezza (0-1)
+  r: number;  // rotazione in gradi (-180, 180]
+}
+
+export interface Cartolina {
+  francobolli: FrancobolloAttaccato[]; // in ordine di aggiunta (l'ultimo è disegnato sopra)
+  modificato: string;                  // ISO: vince la più recente nell'unione (Fase 6)
+}
+
 export interface Stato {
   versione: number;
   giorni: Record<string, Giorno>;
   preferiti: string[];
   preferitiModificato: string;
-  cartoline: Record<string, unknown>;
+  cartoline: Record<string, Cartolina>;
 }
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
+const ID_CARTOLINA = /^[a-z0-9-]{1,40}$/;
 const ZERO = '1970-01-01T00:00:00.000Z';
 
 export function statoVuoto(): Stato {
@@ -67,10 +88,41 @@ export function migra(grezzo: unknown): Stato {
     s.preferiti = [...new Set(g.preferiti.filter((x): x is string => typeof x === 'string'))].slice(0, MAX_PREFERITI);
   }
   if (isoValida(g.preferitiModificato)) s.preferitiModificato = g.preferitiModificato;
+  // Fase 3-4 salvavano `cartoline: {}`: è compatibile, quindi la versione resta 1.
   if (g.cartoline && typeof g.cartoline === 'object' && !Array.isArray(g.cartoline)) {
-    s.cartoline = { ...(g.cartoline as Record<string, unknown>) };
+    for (const [id, v] of Object.entries(g.cartoline as Record<string, unknown>)) {
+      const c = cartolinaValida(v);
+      if (ID_CARTOLINA.test(id) && c) s.cartoline[id] = c;
+    }
   }
   return s;
+}
+
+const numero = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+const tra01 = (v: number) => Math.min(1, Math.max(0, v));
+/** Rotazione in (-180, 180], arrotondata al decimo di grado. */
+export function normalizzaRotazione(r: number): number {
+  let x = ((r % 360) + 360) % 360;
+  if (x > 180) x -= 360;
+  return Math.round(x * 10) / 10;
+}
+
+function cartolinaValida(v: unknown): Cartolina | null {
+  if (!v || typeof v !== 'object') return null;
+  const { francobolli, modificato } = v as Record<string, unknown>;
+  const lista: FrancobolloAttaccato[] = [];
+  if (Array.isArray(francobolli)) {
+    for (const f of francobolli) {
+      if (!f || typeof f !== 'object') continue;
+      const { id, x, y, r } = f as Record<string, unknown>;
+      if (typeof id !== 'string' || !numero(x) || !numero(y)) continue;
+      const pulito = { id, x: tra01(x), y: tra01(y), r: normalizzaRotazione(numero(r) ? r : 0) };
+      const i = lista.findIndex((a) => a.id === id); // un francobollo compare una volta sola
+      if (i >= 0) lista.splice(i, 1);
+      lista.push(pulito);
+    }
+  }
+  return { francobolli: lista.slice(-MAX_FRANCOBOLLI_CARTOLINA), modificato: isoValida(modificato) ? modificato : ZERO };
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -81,7 +133,8 @@ const adesso = () => new Date().toISOString();
 /** Imposta (o cambia) l'emozione di un giorno. `emozione: null` lo cancella. */
 export function impostaGiorno(s: Stato, data: string, emozione: string | null, quando = adesso()): Stato {
   if (!DATA.test(data)) throw new Error(`Data non valida: ${data}`);
-  return { ...s, giorni: { ...s.giorni, [data]: { emozione, modificato: quando } } };
+  // se il cambio fa "sparire" un francobollo, lo si toglie anche dalle cartoline
+  return pulisciCartoline({ ...s, giorni: { ...s.giorni, [data]: { emozione, modificato: quando } } }, quando);
 }
 
 /** Emozioni sbloccate (id), con il primo giorno in cui sono comparse. Ordine: dalla più vecchia. */
@@ -117,10 +170,62 @@ export function alternaPreferito(s: Stato, id: string, quando = adesso()): Stato
   return { ...s, preferiti: nuovi, preferitiModificato: quando };
 }
 
+// ---- Cartoline (Fase 5) ----
+
+/** Cartolina salvata, o una vuota se non è mai stata toccata. */
+export function cartolina(s: Stato, id: string): Cartolina {
+  return s.cartoline[id] ?? { francobolli: [], modificato: ZERO };
+}
+
+function conCartolina(s: Stato, id: string, francobolli: FrancobolloAttaccato[], quando: string): Stato {
+  if (!ID_CARTOLINA.test(id)) throw new Error(`Cartolina non valida: ${id}`);
+  return { ...s, cartoline: { ...s.cartoline, [id]: { francobolli, modificato: quando } } };
+}
+
+/**
+ * Attacca un francobollo sbloccato (o lo sposta/ruota se è già sulla cartolina). Se la cartolina è piena,
+ * il nuovo prende il posto del più vecchio. Restituisce lo stato invariato se il francobollo non è sbloccato.
+ */
+export function attaccaFrancobollo(s: Stato, idCartolina: string, f: FrancobolloAttaccato, quando = adesso()): Stato {
+  if (!sbloccati(s).has(f.id)) return s;
+  const nuovo = { id: f.id, x: tra01(f.x), y: tra01(f.y), r: normalizzaRotazione(f.r) };
+  const lista = [...cartolina(s, idCartolina).francobolli];
+  const i = lista.findIndex((a) => a.id === f.id);
+  if (i >= 0) lista[i] = nuovo; // spostato: resta al suo posto nell'ordine
+  else lista.push(nuovo);
+  return conCartolina(s, idCartolina, lista.slice(-MAX_FRANCOBOLLI_CARTOLINA), quando);
+}
+
+/** Toglie un francobollo dalla cartolina. */
+export function togliFrancobollo(s: Stato, idCartolina: string, id: string, quando = adesso()): Stato {
+  const lista = cartolina(s, idCartolina).francobolli;
+  if (!lista.some((a) => a.id === id)) return s;
+  return conCartolina(s, idCartolina, lista.filter((a) => a.id !== id), quando);
+}
+
+/**
+ * Toglie dalle cartoline i francobolli non più sbloccati. Le cartoline cambiate prendono `quando` come data di
+ * modifica; con `quando` = null la data resta quella vecchia (pulizia "tecnica", es. dopo un'unione).
+ */
+export function pulisciCartoline(s: Stato, quando: string | null = null): Stato {
+  const ok = sbloccati(s);
+  let cambiato = false;
+  const cartoline: Record<string, Cartolina> = {};
+  for (const [id, c] of Object.entries(s.cartoline)) {
+    const tenuti = c.francobolli.filter((f) => ok.has(f.id));
+    if (tenuti.length === c.francobolli.length) cartoline[id] = c;
+    else {
+      cambiato = true;
+      cartoline[id] = { francobolli: tenuti, modificato: quando ?? c.modificato };
+    }
+  }
+  return cambiato ? { ...s, cartoline } : s;
+}
+
 /**
  * Unisce due stati (Fase 6, sincronizzazione): giorno per giorno vince la modifica più recente;
- * per i preferiti vince la lista modificata più di recente; le cartoline per ora si prendono dallo stato
- * con i preferiti più recenti (in Fase 5 avranno anche loro una data di modifica).
+ * per i preferiti vince la lista modificata più di recente; per ogni cartolina vince quella modificata più di
+ * recente (a parità, quella di `a`). Alla fine si tolgono i francobolli non più sbloccati con i giorni uniti.
  */
 export function unisci(a: Stato, b: Stato): Stato {
   const giorni: Record<string, Giorno> = { ...a.giorni };
@@ -129,13 +234,18 @@ export function unisci(a: Stato, b: Stato): Stato {
     if (!x || Date.parse(g.modificato) > Date.parse(x.modificato)) giorni[data] = g;
   }
   const recente = Date.parse(b.preferitiModificato) > Date.parse(a.preferitiModificato) ? b : a;
-  return {
+  const cartoline: Record<string, Cartolina> = { ...a.cartoline };
+  for (const [id, c] of Object.entries(b.cartoline)) {
+    const x = cartoline[id];
+    if (!x || Date.parse(c.modificato) > Date.parse(x.modificato)) cartoline[id] = c;
+  }
+  return pulisciCartoline({
     versione: VERSIONE,
     giorni,
     preferiti: [...recente.preferiti],
     preferitiModificato: recente.preferitiModificato,
-    cartoline: { ...recente.cartoline },
-  };
+    cartoline,
+  });
 }
 
 /** Data di oggi "AAAA-MM-GG" nel fuso Europe/Rome (non quello del dispositivo). */
