@@ -1,7 +1,7 @@
 ---
 // Cornice grigia (SVG definitivo) con area foto e area frase.
-// I contenuti arrivano dagli slot "foto" e "frase" (in Fase 3 ci andranno la foto e la frase del giorno);
-// senza slot si vedono i segnaposto.
+// I contenuti arrivano dagli slot "foto" e "frase": dalla Fase 7 la home ci mette la foto e la frase del giorno
+// (src/pages/index.astro), se in foto.json / frasi.json c'è almeno una voce; senza slot si vedono i segnaposto.
 const base = import.meta.env.BASE_URL;
 ---
 <div class="cornice">

@@ -12,6 +12,8 @@ const { titolo = 'minuscole – L’universo delle cose' } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#6f211c" />
+    <!-- Fase 7: sito personale, i motori di ricerca non devono indicizzarlo (il link resta l'unico modo per trovarlo) -->
+    <meta name="robots" content="noindex, nofollow, noimageindex" />
     <title>{titolo}</title>
   </head>
   <body>

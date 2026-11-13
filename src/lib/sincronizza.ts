@@ -45,7 +45,11 @@ interface Config {
   allineato?: string; // impronta dello stato dopo l'ultima sincronizzazione riuscita: se il locale è diverso, c'è da inviare
 }
 
-const URL_BASE = ((import.meta.env.PUBLIC_SYNC_URL as string | undefined) || URL_SERVIZIO).replace(/\/+$/, '');
+// Senza "https://" il browser lo prenderebbe per un percorso dentro il sito: lo si aggiunge se manca.
+const URL_BASE = ((import.meta.env.PUBLIC_SYNC_URL as string | undefined) || URL_SERVIZIO)
+  .trim()
+  .replace(/\/+$/, '')
+  .replace(/^(?!https?:\/\/)(?=.)/, 'https://');
 const BASE = import.meta.env.BASE_URL;
 
 let info: InfoSync = { fase: 'non-attiva', messaggio: '', ultima: null };

@@ -24,6 +24,16 @@ set "CAMBI="
 for /f "delims=" %%i in ('git status --porcelain') do set "CAMBI=1"
 if not defined CAMBI goto nessunacosa
 
+rem Fase 7: se Node c'e, controlla foto e frasi prima di inviare (un errore bloccherebbe la pubblicazione)
+where npm >nul 2>&1
+if errorlevel 1 goto saltacontrollo
+if not exist "node_modules" goto saltacontrollo
+echo Controllo foto e frasi...
+call npm run --silent contenuti
+if errorlevel 1 goto contenutisbagliati
+echo.
+:saltacontrollo
+
 set "MSG="
 set /p "MSG=Descrizione delle modifiche (invio per messaggio automatico): "
 if not defined MSG set "MSG=Aggiornamento %date% %time:~0,5%"
@@ -65,6 +75,12 @@ exit /b 0
 echo Nessuna modifica da inviare.
 pause
 exit /b 0
+
+:contenutisbagliati
+echo.
+echo Foto o frasi da correggere (vedi sopra): non invio niente, cosi il sito resta com'e.
+pause
+exit /b 1
 
 :nogitinstallato
 echo Git non risulta installato oppure non e nel PATH.

@@ -1,12 +1,12 @@
 ---
 // Pagine interne (Fase 2): una sola rotta per le sezioni ancora vuote (contenuti nelle fasi successive).
-// Il Diario ha una pagina sua dalla Fase 4 (src/pages/diario/), quindi qui si salta.
+// Il Diario (Fase 4) e l'Archivio (Fase 7) hanno una pagina loro (src/pages/diario/, src/pages/archivio/).
 import Base from '../../layouts/Base.astro';
 import Zampa from '../../components/Zampa.astro';
 import { zampe, zampaVisibile } from '../../data/home';
 
 export function getStaticPaths() {
-  return zampe.filter((z) => z.slug !== 'diario').map((z) => ({ params: { sezione: z.slug }, props: { z } }));
+  return zampe.filter((z) => z.slug !== 'diario' && z.slug !== 'archivio').map((z) => ({ params: { sezione: z.slug }, props: { z } }));
 }
 const { z } = Astro.props;
 const base = import.meta.env.BASE_URL;

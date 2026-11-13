@@ -53,12 +53,15 @@ Dentro `/francobolli/`: due cartoline (fiore e mappa, dalle tavole del mockup; p
 
 ### Fase 6 · Sincronizzazione tra dispositivi (senza login) ✅
 Il codice segreto viene generato sul dispositivo dell'utente al primo salvataggio (nessuno lo vede, nemmeno chi ha costruito il sito). Dati cifrati nel browser (chiave derivata dal codice) e salvati su un piccolo servizio gratuito (previsto Cloudflare Workers + KV). "Collega un altro dispositivo" con QR/link; unione per giorno (vince la modifica più recente); esportazione/importazione del file come rete di sicurezza. Il repository è pubblico: nessun segreto nel codice.
-**Fatto quando:** un secondo dispositivo, collegato col QR, vede gli stessi giorni e francobolli e le modifiche si uniscono senza perdite. ✅ (2026-11-13; provato con due browser e il servizio locale; **il Worker va pubblicato su Cloudflare**, vedi `worker/LEGGIMI.md`)
+**Fatto quando:** un secondo dispositivo, collegato col QR, vede gli stessi giorni e francobolli e le modifiche si uniscono senza perdite. ✅ (2026-11-13; provato con due browser e il servizio locale; Worker pubblicato su Cloudflare il 2026-11-13, prova dal vivo da fare)
 - Pagina `/dispositivi/` (link in fondo a Francobolli): QR/link, codice, cartolina di recupero (PDF), copia di sicurezza, scollega / cambia codice.
 
-### Fase 7 · Foto e frase del giorno (rimandata)
-Rimandata: mancano foto e frasi. La Fase 8 è stata anticipata (2026-11-13); quando arrivano i contenuti si usa `fasi/fase-2/PROMPT_FOTO_FRASE.md` (vedi `fasi/fase-8/PROMPT_FASE_9.md`). Dati in `src/data/foto.json` e `frasi.json`; scelta deterministica dalla data (stessa foto/frase per tutto il giorno). Foto in `public/media/foto/`, già compresse (vedi "Gestione dei media"). Prompt già pronto in `fasi/fase-2/PROMPT_FOTO_FRASE.md`.
-**Fatto quando:** foto e frase cambiano ogni giorno senza backend e il peso di `dist/` è sotto controllo.
+### Fase 7 · Foto e frase del giorno ✅
+Dati in `src/data/foto.json` e `frasi.json`; scelta deterministica dalla data nel browser (stessa foto e frase per tutto il giorno, Europe/Rome), senza backend né rebuild giornaliero. Foto in `public/media/foto/`, compresse da `npm run foto` (vedi "Gestione dei media").
+**Fatto quando:** foto e frase cambiano ogni giorno senza backend e il peso di `dist/` è sotto controllo. ✅ (2026-11-13; provato con contenuti di prova: **foto e frasi vere ancora da aggiungere**)
+- Giri mescolati: una voce torna solo dopo tutte le altre; le nuove entrano dal giro successivo; giorni speciali facoltativi (`giorno`).
+- Foto in grande al tocco; **Archivio** (`/archivio/`, anticipato dalla Fase 10) con tutte le foto e le frasi, anche quelle non ancora uscite.
+- Strumenti per William: `aggiungi-contenuti.bat` (foto → frasi → controllo); `invia-su-github.bat` controlla prima di inviare.
 
 ### Fase 8 · Primo gioco (memory) ✅
 Gioco memory a carte, collegato al primo pulsante; vittoria che sblocca un francobollo (si aggiunge ai francobolli del Diario).
@@ -67,10 +70,10 @@ Gioco memory a carte, collegato al primo pulsante; vittoria che sblocca un franc
 - La prima vittoria sblocca il francobollo speciale **Memory** (cuore + M), fuori dalla ruota; nello stato in `premi`, record in `record`.
 
 ### Fase 9 · Altri giochi e Luna Park
-Quiz, puzzle, ecc., uno per volta (prossimo: pulsante dei fiori; prompt in `fasi/fase-8/PROMPT_FASE_9.md`). Ogni gioco dà un francobollo speciale alla prima vittoria. Luna Park (ruota della fortuna con tre pulsanti CASO / LOVE / COSE, dal PDF `Francobolli_e_luna_park.pdf`) si sviluppa più avanti, quando le fasi precedenti sono chiuse.
+Quiz, puzzle, ecc., uno per volta (prossimo: pulsante dei fiori; prompt in `fasi/fase-7/PROMPT_FASE_9.md`). Le foto dell'Archivio (Fase 7) sono disponibili per giochi con foto. Ogni gioco dà un francobollo speciale alla prima vittoria. Luna Park (ruota della fortuna con tre pulsanti CASO / LOVE / COSE, dal PDF `Francobolli_e_luna_park.pdf`) si sviluppa più avanti, quando le fasi precedenti sono chiuse.
 
 ### Fase 10 · Altre pagine interne
-Archivio, Club degli Amici, Caos: contenuti, nell'ordine da decidere.
+Club degli Amici, Caos (e altro per l'Archivio, se servirà): contenuti, nell'ordine da decidere. L'Archivio con foto e frasi c'è dalla Fase 7.
 
 ### Fase 11 · Desktop e rifinitura
 Layout desktop, performance, accessibilità (contrasto, focus, `prefers-reduced-motion`), test su dispositivi reali, sostituzione definitiva dei placeholder con gli SVG finali (se non già fatto prima).
@@ -80,7 +83,7 @@ Layout desktop, performance, accessibilità (contrasto, focus, `prefers-reduced-
 Decisione: **solo GitHub**, nessun servizio esterno per i file; i video vanno su YouTube.
 
 - Limiti GitHub Pages da rispettare: sito pubblicato max **1 GB**, banda ~100 GB/mese (soft). Per stare larghi, obiettivo interno: **cartella `public/media/` sotto ~500 MB** in totale.
-- Foto: comprimerle prima di caricarle (WebP o AVIF, lato lungo ~1600 px per le foto grandi, ~800 px per miniature). Mai originali da fotocamera.
+- Foto: mai originali da fotocamera nel repo. Dalla Fase 7 le comprime `npm run foto` (o `aggiungi-contenuti.bat`): WebP 400 / 800 / 1600 px, nomi anonimi, **metadati (GPS, data, modello) tolti**; originali in `foto-da-aggiungere/` (esclusa da git). Stima: ~0,3 MB a foto con le tre misure.
 - Video: **non nel repo**. Si caricano su YouTube (non in elenco) e si incorporano con `youtube-nocookie.com`, caricando il player solo al click (anteprima statica + iframe al tocco) per non appesantire la home.
 - Animazioni brevi e decorative: preferire SVG/CSS; se serve un video corto in loop, MP4 H.264 sotto 2-3 MB.
 - Nei file dati (`foto.json`, ecc.) si salvano solo i nomi file relativi a `public/media/`; i link si costruiscono con `import.meta.env.BASE_URL`.
@@ -102,7 +105,7 @@ Decisione: **solo GitHub**, nessun servizio esterno per i file; i video vanno su
 - Si può cambiare un giorno passato.
 - Francobolli: numero non deciso (probabilmente > 9); in home si mostrano i "preferiti" scelti dall'utente.
 - Cartoline in formato 10 x 15 cm, PDF a due facciate.
-- Foto e frase del giorno rimandate (mancano i contenuti).
+- Foto e frase del giorno: fatte in Fase 7 (vedi sotto).
 
 ## Decisioni prese per il Diario (Fase 4)
 
@@ -138,12 +141,22 @@ Decisione: **solo GitHub**, nessun servizio esterno per i file; i video vanno su
 - Il francobollo speciale dice da dove viene nel suo dettaglio ("Vinto giocando a Memory").
 - Percorsi dei giochi: `/giochi/<nome>/`.
 
+## Decisioni prese per foto e frasi (Fase 7)
+
+- Sito e repo pubblici vanno bene: `noindex`, nomi dei file anonimi, metadati tolti.
+- Circa 100 foto e 100 frasi, aggiunte nel tempo da William con gli script; foto e frase **indipendenti** (nessun abbinamento).
+- Scelta nel browser (script inline nella home), non al build: niente workflow giornaliero.
+- Date speciali possibili (`giorno` nei JSON), per ora nessuna.
+- Foto in grande al tocco; tutte le foto e le frasi (anche future) nell'Archivio.
+- Niente stato: la scelta dipende solo dalla data.
+- Frasi di massimo 60 caratteri, con autore (massimo 24).
+
 ## Da decidere
 - Conferma dell'elenco delle emozioni (3 livelli, proposta provvisoria in `src/data/emozioni.ts`) e della palette per famiglia
 - Grafica dei francobolli (placeholder fino ad allora); cartoline e portafoglio definitivi dall'artista (oggi estratti dal mockup)
 - Se la griglia dei francobolli resta "in ordine di sblocco" (come il mockup) o per famiglia
 - Nome del repository GitHub (influisce sul `base` di Astro)
-- Quando pubblicare il Worker di Cloudflare (Fase 6: serve solo l'account di William)
 - Ordine delle pagine interne (Fase 10)
+- Se le foto con giorno speciale vanno nascoste nell'Archivio fino al loro giorno (oggi si vedono)
 - Quando sostituire i placeholder con gli SVG definitivi (anche il francobollo Memory e le carte del memory)
 - Quali giochi per fiori, arcobaleno e sole (Fase 9)

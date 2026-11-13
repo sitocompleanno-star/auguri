@@ -1,0 +1,258 @@
+---
+// Archivio (Fase 7, prima parte della Fase 10): tutte le foto e tutte le frasi, anche quelle non ancora uscite
+// come "del giorno". La foto e la frase di oggi hanno l'etichetta "Oggi" (calcolata nel browser, come in home).
+// Le miniature (400 px) si caricano solo quando arrivano sullo schermo; toccandole si apre la foto in grande
+// e si scorre tra tutte.
+import Base from '../../layouts/Base.astro';
+import Zampa from '../../components/Zampa.astro';
+import FotoGrande from '../../components/FotoGrande.astro';
+import { zampe, zampaVisibile } from '../../data/home';
+import { foto, frasi, perAggiunta } from '../../lib/contenuti.ts';
+
+const base = import.meta.env.BASE_URL;
+const zampa = zampe.find((z) => z.slug === 'archivio')!;
+const elencoFoto = perAggiunta(foto);
+const elencoFrasi = perAggiunta(frasi);
+const dati = JSON.stringify({
+  foto: foto.map(({ id, aggiunta, giorno }) => ({ id, aggiunta, giorno })),
+  frasi: frasi.map(({ id, aggiunta, giorno }) => ({ id, aggiunta, giorno })),
+});
+---
+<Base titolo="Archivio · minuscole">
+  <main class="archivio" data-archivio={dati}>
+    <Zampa {...zampa} top={40} k={0} href={base} visibile={zampaVisibile} estesa />
+    <h1 class="archivio__titolo">Archivio</h1>
+
+    <div class="schede" role="tablist" aria-label="Contenuti dell'archivio">
+      <button type="button" class="scheda" role="tab" id="scheda-foto" aria-controls="pannello-foto" aria-selected="true" data-scheda="foto">
+        Foto <span class="scheda__n">{foto.length}</span>
+      </button>
+      <button type="button" class="scheda" role="tab" id="scheda-frasi" aria-controls="pannello-frasi" aria-selected="false" tabindex="-1" data-scheda="frasi">
+        Frasi <span class="scheda__n">{frasi.length}</span>
+      </button>
+    </div>
+
+    <section class="pannello" id="pannello-foto" role="tabpanel" aria-labelledby="scheda-foto">
+      {elencoFoto.length ? (
+        <ul class="griglia">
+          {elencoFoto.map((f) => (
+            <li>
+              <button type="button" class="miniatura" data-foto-grande data-gruppo="archivio" data-id={f.id} data-w={f.w} data-h={f.h} data-alt={f.alt}>
+                <img
+                  src={`${base}media/foto/${f.id}-400.webp`}
+                  alt={f.alt}
+                  width="400"
+                  height={Math.round((400 * f.h) / f.w)}
+                  loading="lazy"
+                  decoding="async"
+                  style={f.fuoco ? `object-position:${f.fuoco}` : undefined}
+                />
+                <span class="oggi" data-oggi-foto={f.id} hidden>Oggi</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="vuoto">Ancora nessuna foto.</p>
+      )}
+    </section>
+
+    <section class="pannello" id="pannello-frasi" role="tabpanel" aria-labelledby="scheda-frasi" hidden>
+      {elencoFrasi.length ? (
+        <ul class="frasi">
+          {elencoFrasi.map((f) => (
+            <li class="frase">
+              <span class="oggi" data-oggi-frase={f.id} hidden>Oggi</span>
+              <figure>
+                <blockquote><p>{f.testo}</p></blockquote>
+                {f.autore && <figcaption>{f.autore}</figcaption>}
+              </figure>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="vuoto">Ancora nessuna frase.</p>
+      )}
+    </section>
+
+    <p class="archivio__piede"><a class="archivio__indietro" href={base} data-zampa="chiudi">← torna alla home</a></p>
+  </main>
+  {elencoFoto.length > 0 && <FotoGrande />}
+</Base>
+
+<script>
+  import { delGiorno, oggiRoma } from '../../lib/del-giorno.js';
+
+  const radice = document.querySelector<HTMLElement>('[data-archivio]')!;
+  const dati = JSON.parse(radice.dataset.archivio!);
+
+  // Etichetta "Oggi" (stessa scelta della home)
+  function segnaOggi() {
+    const oggi = oggiRoma();
+    const f = delGiorno(dati.foto, oggi, 'foto');
+    const fr = delGiorno(dati.frasi, oggi, 'frasi');
+    document.querySelectorAll<HTMLElement>('[data-oggi-foto]').forEach((el) => { el.hidden = el.dataset.oggiFoto !== f?.id; });
+    document.querySelectorAll<HTMLElement>('[data-oggi-frase]').forEach((el) => { el.hidden = el.dataset.oggiFrase !== fr?.id; });
+  }
+  segnaOggi();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) segnaOggi(); });
+
+  // Schede Foto / Frasi (frecce ← → tra le schede; #frasi nell'indirizzo apre le frasi)
+  const schede = [...document.querySelectorAll<HTMLButtonElement>('[data-scheda]')];
+  function scegli(nome: string, focus = false) {
+    for (const s of schede) {
+      const attiva = s.dataset.scheda === nome;
+      s.setAttribute('aria-selected', String(attiva));
+      s.tabIndex = attiva ? 0 : -1;
+      document.getElementById(s.getAttribute('aria-controls')!)!.hidden = !attiva;
+      if (attiva && focus) s.focus();
+    }
+    history.replaceState(null, '', nome === 'frasi' ? '#frasi' : location.pathname + location.search);
+  }
+  schede.forEach((s, i) => {
+    s.addEventListener('click', () => scegli(s.dataset.scheda!));
+    s.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      e.preventDefault();
+      scegli(schede[(i + (e.key === 'ArrowRight' ? 1 : schede.length - 1)) % schede.length].dataset.scheda!, true);
+    });
+  });
+  if (location.hash === '#frasi') scegli('frasi');
+</script>
+
+<style>
+  .archivio {
+    position: relative;
+    min-height: max(100dvh, calc(1200 * var(--u)));
+    padding: calc(200 * var(--u)) calc(40 * var(--u)) calc(60 * var(--u));
+  }
+  .archivio__titolo {
+    position: absolute;
+    left: calc(400 * var(--u));
+    top: calc(50 * var(--u));
+    margin: 0;
+    font-family: var(--font-titolo);
+    font-style: italic;
+    font-weight: 400;
+    font-size: max(calc(84 * var(--u)), 30px);
+    line-height: 1.1;
+    color: var(--bordeaux);
+  }
+
+  .schede {
+    display: flex;
+    gap: 10px;
+    margin-bottom: calc(36 * var(--u));
+  }
+  .scheda {
+    min-height: 44px;
+    padding: 0 18px;
+    border: 2px solid var(--bordeaux);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--bordeaux);
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  .scheda[aria-selected='true'] {
+    background: var(--bordeaux);
+    color: #fff;
+  }
+  .scheda__n { font-weight: 400; opacity: 0.85; }
+  .scheda:focus-visible,
+  .miniatura:focus-visible,
+  .archivio__indietro:focus-visible {
+    outline: 3px solid var(--bordeaux);
+    outline-offset: 3px;
+  }
+
+  .griglia {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .miniatura {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    padding: 0;
+    border: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--grigio);
+    cursor: zoom-in;
+  }
+  .miniatura img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .frasi {
+    grid-template-columns: minmax(0, 1fr);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+  }
+  .frase {
+    position: relative;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: var(--grigio-chiaro);
+  }
+  .frase figure { margin: 0; }
+  .frase blockquote { margin: 0; }
+  .frase p {
+    margin: 0;
+    font-family: var(--font-diario);
+    font-size: 18px;
+    line-height: 1.3;
+    color: var(--bordeaux);
+  }
+  .frase p::before { content: '“'; }
+  .frase p::after { content: '”'; }
+  .frase figcaption {
+    margin-top: 4px;
+    font-size: 14px;
+    color: #5e4743;
+  }
+  .frase figcaption::before { content: '— '; }
+
+  .oggi {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--bordeaux);
+    color: #fff;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .frase .oggi { position: static; display: inline-block; margin-bottom: 6px; }
+  .oggi[hidden] { display: none !important; }
+
+  .vuoto {
+    color: var(--grigio-testo);
+    font-size: 16px;
+  }
+  .archivio__piede { margin: calc(50 * var(--u)) 0 0; }
+  .archivio__indietro {
+    color: var(--bordeaux);
+    font-weight: 700;
+    font-size: 16px;
+    text-decoration: none;
+  }
+</style>

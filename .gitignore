@@ -2,3 +2,7 @@ node_modules/
 dist/
 .astro/
 .DS_Store
+
+# Fase 7: originali delle foto e frasi da importare (non vanno su GitHub)
+foto-da-aggiungere/
+frasi-da-aggiungere.txt

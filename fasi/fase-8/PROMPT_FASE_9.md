@@ -1,7 +1,7 @@
 # Prompt per la prossima fase · Fase 7 (foto e frase) oppure Fase 9 (secondo gioco)
 
 La **Fase 7 · Foto e frase del giorno** è rimandata finché mancano foto e frasi.
-- **Se foto e frasi sono pronte:** usa il prompt già scritto in `fasi/fase-2/PROMPT_FOTO_FRASE.md`, con le foto (già compresse) e le frasi. Aggiungi questa riga al contesto: "leggi anche `fasi/fase-8/REPORT.md` e `fasi/fase-8/STATO_SITO.md`".
+- **Se foto e frasi sono pronte:** usa `fasi/fase-8/PROMPT_FASE_7.md` (aggiornato dopo la Fase 8), con le foto e le frasi.
 - **Se mancano ancora:** si va avanti con la **Fase 9 · secondo gioco** (pulsante dei fiori), che non dipende da contenuti esterni. Il prompt è qui sotto.
 
 Incolla il testo qui sotto in una nuova chat insieme a:

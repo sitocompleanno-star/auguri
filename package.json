@@ -10,9 +10,16 @@
     "astro": "astro",
     "francobolli": "node --experimental-strip-types scripts/genera-francobolli.mjs",
     "servizio": "node scripts/servizio-locale.mjs",
-    "prova-sync": "node --experimental-strip-types --no-warnings scripts/prova-sincronizzazione.mjs"
+    "prova-sync": "node --experimental-strip-types --no-warnings scripts/prova-sincronizzazione.mjs",
+    "foto": "node --experimental-strip-types --no-warnings scripts/aggiungi-foto.mjs",
+    "frasi": "node --experimental-strip-types --no-warnings scripts/aggiungi-frasi.mjs",
+    "contenuti": "node --experimental-strip-types --no-warnings scripts/controlla-contenuti.mjs",
+    "prova-giorno": "node --experimental-strip-types --no-warnings scripts/prova-del-giorno.mjs"
   },
   "dependencies": {
     "astro": "^7.4.1"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.5"
   }
 }

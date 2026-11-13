@@ -112,4 +112,4 @@ La **Fase 7 (foto e frase del giorno) resta rimandata**: mancano ancora i conten
 - **Il Worker di Cloudflare non è ancora pubblicato**: `URL_SERVIZIO` in `src/data/sincronizzazione.ts` è vuoto, quindi la sincronizzazione (anche del premio) è spenta. Guida in `worker/LEGGIMI.md` (~10 minuti), poi va messo l'indirizzo in `src/data/sincronizzazione.ts`.
 - Grafica definitiva del francobollo Memory e delle carte (oggi segnaposto e SVG semplici): si sostituiscono con file dello stesso nome (`public/grafica/francobolli/memory.svg`).
 - Favicon ancora mancante (dalla Fase 4).
-- Fase 7 (foto e frase) sempre in attesa dei contenuti.
+- Fase 7 (foto e frase) sempre in attesa dei contenuti: il prompt aggiornato è in `fasi/fase-8/PROMPT_FASE_7.md`.

@@ -4,10 +4,105 @@ import Zampa from '../components/Zampa.astro';
 import Cornice from '../components/Cornice.astro';
 import PulsanteGioco from '../components/PulsanteGioco.astro';
 import StripFrancobolli from '../components/StripFrancobolli.astro';
+import FotoGrande from '../components/FotoGrande.astro';
 import { zampe, zampaVisibile, giochi, francobolli } from '../data/home';
 import { controllaRuota } from '../lib/francobolli-definitivi.ts';
+import { foto, frasi } from '../lib/contenuti.ts';
+import codiceDelGiorno from '../lib/del-giorno.js?raw';
 const base = import.meta.env.BASE_URL;
 controllaRuota();
+
+// Fase 7 · Foto e frase del giorno. La scelta avviene nel browser (stessa foto e frase per tutto il giorno,
+// fuso Europe/Rome; vedi src/lib/del-giorno.js), con uno script inline subito dopo la cornice: così foto e
+// frase sono al loro posto prima che la pagina compaia e il sito non va ricostruito ogni giorno.
+// Nella pagina vanno solo i campi che servono (~150 byte a foto, ~100 a frase).
+const datiFoto = foto.map(({ id, w, h, alt, aggiunta, fuoco, giorno }) => ({ id, w, h, alt, aggiunta, fuoco, giorno }));
+const datiFrasi = frasi.map(({ id, testo, autore, aggiunta, giorno }) => ({ id, testo, autore, aggiunta, giorno }));
+const json = (v: unknown) => JSON.stringify(v).replace(/</g, '\\u003c');
+// Il codice non contiene stringhe su più righe né "//" dentro le stringhe: si possono togliere rientri e commenti.
+const compatta = (js: string) => js.split('\n').map((r) => r.trim()).filter((r) => r && !r.startsWith('//')).join('\n');
+const scriptDelGiorno = `(() => {
+${compatta(codiceDelGiorno.replace(/^export /gm, ''))}
+${compatta(mostraDelGiorno.toString())}
+mostraDelGiorno(${json(datiFoto)}, ${json(datiFrasi)}, ${json(base)}, oggiRoma, delGiorno);
+})();`;
+
+/**
+ * Riempie gli slot della cornice (gira nel browser: viene incollata nello script inline, quindi niente
+ * riferimenti a variabili esterne). Ricontrolla la data ogni minuto e quando si torna sulla pagina, così a
+ * mezzanotte (Europe/Rome) cambia anche se la pagina è rimasta aperta.
+ */
+function mostraDelGiorno(
+  FOTO: { id: string; w: number; h: number; alt: string; fuoco?: string }[],
+  FRASI: { testo: string; autore?: string }[],
+  BASE: string,
+  oggiRoma: () => string,
+  delGiorno: (voci: any[], giorno: string, seme: string) => any,
+) {
+  const boxFoto = document.querySelector<HTMLElement>('[data-dg-foto]');
+  const boxFrase = document.querySelector<HTMLElement>('[data-dg-frase]');
+  let mostrato = '';
+
+  function adattaFrase() {
+    if (!boxFrase || boxFrase.hidden) return;
+    const area = boxFrase.parentElement!;
+    const max = area.clientHeight;
+    boxFrase.classList.remove('is-tagliata');
+    // dal più grande al più piccolo leggibile (16 → 12 px); se non basta, 3 righe con i puntini
+    let px = 16;
+    boxFrase.style.fontSize = `${px}px`;
+    while (boxFrase.scrollHeight > max && px > 12) {
+      px -= 0.5;
+      boxFrase.style.fontSize = `${px}px`;
+    }
+    if (boxFrase.scrollHeight > max) boxFrase.classList.add('is-tagliata');
+  }
+
+  function aggiorna() {
+    const oggi = oggiRoma();
+    if (oggi === mostrato) return;
+    mostrato = oggi;
+
+    if (boxFoto) {
+      const f = delGiorno(FOTO, oggi, 'foto');
+      const btn = boxFoto.querySelector<HTMLButtonElement>('[data-foto-grande]')!;
+      const img = btn.querySelector('img')!;
+      boxFoto.querySelector<HTMLElement>('[data-dg-vuoto]')!.hidden = !!f;
+      btn.hidden = !f;
+      if (f) {
+        Object.assign(btn.dataset, { id: f.id, w: String(f.w), h: String(f.h), alt: f.alt });
+        img.classList.remove('is-pronta');
+        img.onload = () => img.classList.add('is-pronta');
+        img.width = 800;
+        img.height = Math.round((800 * f.h) / f.w);
+        img.alt = f.alt;
+        img.style.objectPosition = f.fuoco || '50% 50%';
+        img.src = `${BASE}media/foto/${f.id}-800.webp`;
+        if (img.complete && img.naturalWidth) img.classList.add('is-pronta');
+      }
+    }
+    if (boxFrase) {
+      const fr = delGiorno(FRASI, oggi, 'frasi');
+      const vuoto = boxFrase.parentElement!.querySelector<HTMLElement>('[data-dg-vuoto]')!;
+      vuoto.hidden = !!fr;
+      boxFrase.hidden = !fr;
+      if (fr) {
+        boxFrase.querySelector('[data-dg-testo]')!.textContent = fr.testo;
+        const autore = boxFrase.querySelector<HTMLElement>('[data-dg-autore]')!;
+        autore.textContent = fr.autore ? fr.autore : '';
+        autore.hidden = !fr.autore;
+        adattaFrase();
+      }
+    }
+  }
+
+  aggiorna();
+  window.setInterval(aggiorna, 60_000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) aggiorna(); });
+  window.addEventListener('resize', adattaFrase);
+  // i font di sistema sono già pronti, ma se cambia il font la misura va rifatta
+  document.fonts?.ready.then(adattaFrase);
+}
 ---
 <Base>
   <main class="home">
@@ -21,7 +116,29 @@ controllaRuota();
       {zampe.map((z) => <Zampa {...z} href={`${base}${z.slug}/`} visibile={zampaVisibile} />)}
     </nav>
 
-    <div class="home__cornice"><Cornice /></div>
+    <div class="home__cornice">
+      <Cornice>
+        {datiFoto.length > 0 && (
+          <div slot="foto" class="dg" data-dg-foto>
+            <span class="dg__segnaposto" data-dg-vuoto>FOTO RANDOM DEL GIORNO</span>
+            <button type="button" class="dg__foto" data-foto-grande hidden>
+              <img class="dg__img" alt="" width="800" height="600" decoding="async" fetchpriority="high" />
+              <span class="visually-hidden">(apri la foto in grande)</span>
+            </button>
+          </div>
+        )}
+        {datiFrasi.length > 0 && (
+          <div slot="frase" class="dg">
+            <span class="dg__segnaposto" data-dg-vuoto>FRASE RANDOM DEL GIORNO</span>
+            <figure class="dgf" data-dg-frase hidden>
+              <blockquote class="dgf__testo"><p data-dg-testo></p></blockquote>
+              <figcaption class="dgf__autore" data-dg-autore></figcaption>
+            </figure>
+          </div>
+        )}
+      </Cornice>
+      {(datiFoto.length > 0 || datiFrasi.length > 0) && <script is:inline set:html={scriptDelGiorno}></script>}
+    </div>
 
     <div class="home__giochi">
       {giochi.map((g) => <PulsanteGioco {...g} />)}
@@ -31,6 +148,7 @@ controllaRuota();
       <StripFrancobolli totale={francobolli.totale} preferiti href={`${base}francobolli/`} />
     </div>
   </main>
+  {datiFoto.length > 0 && <FotoGrande />}
 </Base>
 
 <style>
@@ -90,6 +208,81 @@ controllaRuota();
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
+  }
+
+  /* ---- Fase 7 · foto e frase del giorno (dentro le aree della cornice, misure in Cornice.astro) ---- */
+  .dg {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dg__segnaposto {
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: calc(19.5 * var(--u));
+    color: var(--grigio-testo);
+  }
+  .dg__segnaposto[hidden] { display: none; }
+  .dg__foto {
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    border: 0;
+    background: var(--grigio);
+    border-radius: inherit;
+    cursor: zoom-in;
+  }
+  .dg__foto[hidden] { display: none; }
+  .dg__foto:focus-visible {
+    outline: 3px solid var(--bordeaux);
+    outline-offset: 2px;
+  }
+  .dg__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: calc(20 * var(--u));
+    opacity: 0;
+    transition: opacity 350ms ease-out;
+  }
+  .dg__img:global(.is-pronta) { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) {
+    .dg__img { transition: none; }
+  }
+  .dgf {
+    margin: 0;
+    padding: 0 8px;
+    max-height: 100%;
+    overflow: hidden;
+    text-align: center;
+    font-family: var(--font-diario);
+    font-size: 16px;
+    line-height: 1.15;
+    color: var(--bordeaux);
+    overflow-wrap: anywhere;
+  }
+  .dgf[hidden] { display: none; }
+  .dgf__testo,
+  .dgf__testo p,
+  .dgf__autore { display: inline; margin: 0; }
+  .dgf__testo p::before { content: '“'; }
+  .dgf__testo p::after { content: '”'; }
+  .dgf__autore {
+    font-family: var(--font-ui);
+    font-size: 0.78em;
+    color: #5e4743;
+    white-space: nowrap;
+  }
+  .dgf__autore::before { content: ' — '; }
+  .dgf__autore[hidden] { display: none; }
+  .dgf:global(.is-tagliata) {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
   }
 
   .home__strip {
